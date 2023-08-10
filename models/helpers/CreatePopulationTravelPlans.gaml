@@ -126,7 +126,6 @@ global {
 			}	
 		}
 		write "Total population: " + length(Individual);
-		ask 99000 among Individual{ do die;}
 		
 		write "Creating travel plans ..";
 		ask Individual {
@@ -186,3 +185,4 @@ global {
 }
 
 experiment CreatePopulationTravelPlans type: gui {}
+
