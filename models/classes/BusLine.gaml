@@ -12,6 +12,10 @@ import "BusConnection.gaml"
 global {
 	int BUS_DIRECTION_OUTGOING <- 1;
 	int BUS_DIRECTION_RETURN <- 2;
+	list<rgb> BL_COLORS <- [#darkblue,#darkcyan,#darkgoldenrod,#darkgray,#darkkhaki,#darkmagenta,#darkolivegreen,
+				#darkorchid,#darksalmon,#darkseagreen,#darkslateblue,#darkslategray,#darkturquoise,#darkviolet];
+	
+	bool show_buslines <- true;
 }
 
 species BusLine schedules: [] parallel: true {
@@ -24,6 +28,14 @@ species BusLine schedules: [] parallel: true {
 	list<int> bl_return_dists <- [];
 	list<BusConnection> bl_outgoing_connections <- [];
 	list<BusConnection> bl_return_connections <- [];
+	rgb bl_color <- one_of(BL_COLORS);
+	geometry bl_shape;
+	
+	aspect default {
+		if show_buslines {
+			draw (bl_shape+7#meter) color: bl_color;	
+		}
+	}
 	
 	// create a BC from passed arguments
 	action create_bc (BusStop bs1, int dir1, BusLine bl2, BusStop bs2, int dir2, int cd) {

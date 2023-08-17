@@ -129,7 +129,14 @@ global {
 		
 		write "Creating travel plans ..";
 		ask Individual {
-			do make_plans;
+			// if another individual with the same origin and destination bus stops has already a planning, just copy it
+			Individual ind <- first(Individual where (!empty(each.ind_bt_plan) and
+							each.ind_origin_bs = self.ind_origin_bs and each.ind_destin_bs = self.ind_destin_bs));
+			if ind != nil {
+				self.ind_bt_plan <- copy (ind.ind_bt_plan);	
+			} else { // else, compute
+				do make_plans;
+			}
 		}
 		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_bt_plan));
 		
@@ -152,7 +159,6 @@ global {
 		}
 		write "2 - Population with a plan : " + length(Individual where !empty(each.ind_bt_plan));
 		
-		
 		write "Saving populations and travel plans to text files ...";
 		bool dl <- delete_file("../../includes/csv/populations.csv");
 		dl <- delete_file("../../includes/csv/travel_plans.csv");
@@ -160,7 +166,7 @@ global {
 		save "ind,type,start,bl1,bs1,dir1,dist1,bl2,bs2,dir2,dist2,walk" format: 'text' rewrite: true to: "../../includes/csv/travel_plans.text";
 		
 		ask Individual {
-			int ind_id <- int(self);
+			ind_id <- int(self);
 			save '' + ind_id + ',' + ind_origin_zone.zone_id + ',' + ind_destin_zone.zone_id + ',' + 
 							ind_origin_bs.bs_id + ',' + ind_destin_bs.bs_id
 					format: "text" rewrite: false to: "../../includes/csv/populations.text";

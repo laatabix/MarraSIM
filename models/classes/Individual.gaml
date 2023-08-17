@@ -10,6 +10,7 @@ model Individual
 import "PDUZone.gaml"
 
 species Individual parallel: true {
+	int ind_id;
 	PDUZone ind_origin_zone;
 	PDUZone ind_destin_zone;
 	BusStop ind_origin_bs;

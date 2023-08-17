@@ -31,6 +31,7 @@ global {
 	
 	// defining one simulation step as 5 seconds
 	float step <- 5#second;
+	font AFONT0 <- font("Calibri", 16, #bold);
 	
 	// simulation parameters
 	bool traffic_on <- true; // include congestion from Google Traffic
@@ -64,26 +65,24 @@ global {
 			bs_zone <- first(PDUZone overlapping self);
 		}
 		
-		matrix bustopsMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
-		matrix buslinesMatrix <- matrix(csv_file("../includes/csv/data_lines.csv",true));
-		
-		loop i from: 0 to: bustopsMatrix.rows -1 {
-			string bus_line_name <- bustopsMatrix[0,i];
+		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
+		loop i from: 0 to: dataMatrix.rows -1 {
+			string bus_line_name <- dataMatrix[0,i];
 			// create the bus line if it does not exist yet
 			BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
 			if current_bl = nil {
 				create BusLine returns: my_busline { bl_name <- bus_line_name; }
 				current_bl <- my_busline[0];
 			}
-			BusStop current_bs <- BusStop first_with (each.bs_id = int(bustopsMatrix[3,i]));
+			BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
 			if current_bs != nil {
-				if int(bustopsMatrix[1,i]) = BUS_DIRECTION_OUTGOING {
-					if length(current_bl.bl_outgoing_bs) != int(bustopsMatrix[2,i]) {
+				if int(dataMatrix[1,i]) = BUS_DIRECTION_OUTGOING {
+					if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
 					current_bl.bl_outgoing_bs <+ current_bs;
 				} else {
-					if length(current_bl.bl_return_bs) != int(bustopsMatrix[2,i]) {
+					if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
 					current_bl.bl_return_bs <+ current_bs;
@@ -93,7 +92,7 @@ global {
 					current_bs.bs_bus_lines <+ current_bl;
 				}
 			} else {
-				write "Error, the bus stop does not exist : " + bustopsMatrix[3,i] + " (" + bustopsMatrix[1,i] +")" color: #red;
+				write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
 				return;
 			}
 		}
@@ -101,28 +100,36 @@ global {
 		ask BusLine {
 			loop i from: 0 to: length(bl_outgoing_bs) - 2 {
 				bl_outgoing_dists <+ bl_outgoing_bs[i].dist_to_bs(bl_outgoing_bs[i+1]);
+				try {
+					geometry geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
+					bl_shape <- union(bl_shape,geom);
+				} catch {}
 			}
 			loop i from: 0 to: length(bl_return_bs) - 2 {
 				bl_return_dists <+ bl_return_bs[i].dist_to_bs(bl_return_bs[i+1]);
+				try {
+					geometry geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
+					bl_shape <- union(bl_shape,geom);
+				} catch {}
 			}
 		}
 		ask BusStop {
 			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= 400#m)); 
+			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)); 
 		}
-
+		/*
 		// create bus connection for each line
 		write "Creating bus connections ...";
-		matrix busconnectionsMatrix <- matrix(csv_file("../includes/csv/bus_connections.csv",true));
-		loop i from: 0 to: busconnectionsMatrix.rows -1 {
-			BusLine bl <- BusLine first_with (each.bl_name = busconnectionsMatrix[0,i]);
+		dataMatrix <- matrix(csv_file("../includes/csv/bus_connections.csv",true));
+		loop i from: 0 to: dataMatrix.rows -1 {
+			BusLine bl <- BusLine first_with (each.bl_name = dataMatrix[0,i]);
 			if bl != nil {
 				ask bl {
-					do create_bc (BusStop first_with (each.bs_id = int(busconnectionsMatrix[2,i])),
-						int(busconnectionsMatrix[4,i]),
-						BusLine first_with (each.bl_name = busconnectionsMatrix[1,i]),
-						BusStop first_with (each.bs_id = int(busconnectionsMatrix[3,i])),
-						int(busconnectionsMatrix[5,i]), int(busconnectionsMatrix[6,i]));
+					do create_bc (BusStop first_with (each.bs_id = int(dataMatrix[2,i])),
+						int(dataMatrix[4,i]),
+						BusLine first_with (each.bl_name = dataMatrix[1,i]),
+						BusStop first_with (each.bs_id = int(dataMatrix[3,i])),
+						int(dataMatrix[5,i]), int(dataMatrix[6,i]));
 				}
 			} else {
 				write "Error: nil BusLine while reading bus_connections file!" color: #red;
@@ -131,12 +138,13 @@ global {
 		
 		// creating n_vehicles for each bus line
 		write "Creating bus vehicles ...";
+		dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_data.csv",true));
 		ask BusLine {
 			int n_vehicles <- 2;
-			if buslinesMatrix index_of bl_name != nil {
-				n_vehicles <- int(buslinesMatrix[1, int((buslinesMatrix index_of bl_name).y)]);
-				bl_interval_time_m <- int(buslinesMatrix[4, int((buslinesMatrix index_of bl_name).y)]);
-				bl_comm_speed <- float(buslinesMatrix[7, int((buslinesMatrix index_of bl_name).y)]);
+			if dataMatrix index_of bl_name != nil {
+				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
+				bl_interval_time_m <- int(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
+				bl_comm_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]);
 			}
 			int i_counter <- 0;
 			create BusVehicle number: n_vehicles {
@@ -161,8 +169,46 @@ global {
 		
 		// create the population of moving individuals between PUDZones
 		write "Creating population ...";
-		//TODO read pop file here
+		dataMatrix <- matrix(csv_file("../includes/csv/populations.csv",true));
+		loop i from: 0 to: dataMatrix.rows -1 {
+			create Individual{
+				ind_id <- int(dataMatrix[0,i]);
+				ind_origin_zone <- PDUZone first_with (each.zone_id = int(dataMatrix[1,i]));
+				ind_destin_zone <- PDUZone first_with (each.zone_id = int(dataMatrix[2,i]));
+				ind_origin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
+				ind_destin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[4,i]));	
+			}
+		}
 		
+		write "Creating travel plans ...";
+		dataMatrix <- matrix(csv_file("../includes/csv/travel_plans.csv",true));
+		int id_0 <- -1;
+		int id_x;
+		Individual indiv_x;
+		loop i from: 0 to: dataMatrix.rows -1 {
+			id_x <-  int(dataMatrix[0,i]);
+			if id_x != id_0 {
+				id_0 <- id_x;
+				indiv_x <- Individual first_with (each.ind_id = id_x);
+			}
+			create BusTrip {
+				bt_type <- int(dataMatrix[1,i]);
+				bt_start_bs <- BusStop first_with (each.bs_id = int(dataMatrix[2,i]));
+				bt_bus_lines <- [BusLine first_with (each.bl_name = string(dataMatrix[3,i]))];
+				bt_bus_stops <- [BusStop first_with (each.bs_id = int(dataMatrix[4,i]))];
+				bt_bus_directions <- [int(dataMatrix[5,i])];
+				bt_bus_dists <- [int(dataMatrix[6,i])];
+				if bt_type = BUS_TRIP_TWO_LINE {
+					bt_bus_lines <+ BusLine first_with (each.bl_name = string(dataMatrix[7,i]));
+					bt_bus_stops <+ BusStop first_with (each.bs_id = int(dataMatrix[8,i]));
+					bt_bus_directions <+ int(dataMatrix[9,i]);
+					bt_bus_dists <+ int(dataMatrix[10,i]);
+				}
+				bt_walk_dist <- int(dataMatrix[11,i]);
+				indiv_x.ind_bt_plan <+ self; 	
+			}
+		}
+		*/
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
 	}
@@ -171,7 +217,7 @@ global {
 	/*******************************************************************************************************************************/
 	
 	// update road traffic and/or generate travellers each X minutes
-	int Nminutes <- 5;
+	int Nminutes <- 10; // Nminutes has to be a divider of 1hour
 	reflex going_on when: int(time) mod int(Nminutes#minute) = 0 {
 		
 		int tt <- int(sim_start_hour) + int(time);
@@ -182,43 +228,36 @@ global {
 		}
 		
 		// Each hour, the traffic levels on roads are updated
-		if traffic_on and int(time) mod int(1#hour) = 0 {
+		if int(time) mod int(1#hour) = 0 {
 			if int(hh) >= 6 and int(hh) <= 23 { // 06:00 - 23:00 range only
-				matrix rd_traff_data <- matrix(csv_file("../includes/csv/roads_traffic/" + hh + ".csv",true));
-				ask RoadSegment where (each.rs_in_city) {
-					rs_traffic_level <- int(rd_traff_data[1,rs_id]);
-					rs_col <- G_TRAFF_COLORS[rs_traffic_level];
-				}
 				current_affluence <- h_affluence[int(hh)];
-			} else {
-				ask RoadSegment where (each.rs_in_city) {
-					rs_traffic_level <- G_TRAFF_LEVEL_GREEN;
-					rs_col <- G_TRAFF_COLORS[rs_traffic_level];
+				if traffic_on {
+					matrix rd_traff_data <- matrix(csv_file("../includes/csv/roads_traffic/" + hh + ".csv",true));
+					ask RoadSegment where (each.rs_in_city) {
+						rs_traffic_level <- int(rd_traff_data[1,rs_id]);
+						rs_col <- G_TRAFF_COLORS[rs_traffic_level];
+					}
 				}
+			} else {
 				current_affluence <- 0.0;
+				if traffic_on {
+					ask RoadSegment where (each.rs_in_city) {
+						rs_traffic_level <- G_TRAFF_LEVEL_GREEN;
+						rs_col <- G_TRAFF_COLORS[rs_traffic_level];
+					}
+				}
 			}
 		}
 		
 		// each X minutes
 		// ask a random number of people (N%) to move and make a program for their trip
 		int nn <- int(current_affluence / (60/Nminutes) * length(Individual));
-		write formatted_time() + "Computing travel plans for " + nn + " people";
-		ask int(current_affluence / (60/Nminutes) * length(Individual)) among
-		 		(Individual where (!each.ind_arrived and empty(each.ind_bt_plan))) {
-		 	// TODO
-			/*do make_plans;
-			if !empty(ind_bt_plan) {
-				ind_moving <- true;
-				ind_waiting_bs <- ind_origin_bs;
-				ind_waiting_bs.bs_waiting_people <+ self;
-				ind_waiting_time <- int(time);
-			} else { // no plan, relocate to find a plan next time
-				ind_origin_bs <- one_of(BusStop where (each.bs_zone = ind_origin_zone));
-				if ind_origin_bs = nil { // in case of no bus stops in the zone
-					ind_origin_bs <- BusStop closest_to ind_origin_zone;
-				}
-			}*/
-			//TODO
+		write formatted_time() + nn + " new people are travelling ...";
+		ask nn among (Individual where (!each.ind_moving)) {
+			ind_moving <- true;
+			ind_waiting_bs <- ind_origin_bs;
+			ind_waiting_bs.bs_waiting_people <+ self;
+			ind_waiting_time <- int(time);
 		}
 		write formatted_time()  + "Total people waiting at bus stops : " + length(Individual where (each.ind_moving)) color: #purple;
 		
@@ -236,35 +275,61 @@ global {
 
 experiment MarraSIM type: gui {
 	
+	parameter "Show/Hide Bus Lines" category:"Visualization" var: show_buslines;
+	
 	init {
 		minimum_cycle_duration <- 0.05;
 	}
 	
 	output {
-		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
+		//layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
+		
 		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
-			overlay position: {10#px,10#px} size: {100#px,40#px} background: #black{
-	            draw "" + world.formatted_time() at: {20#px, 25#px} font: font("Calibri", 16, #bold) color: #yellow;
+			overlay position: {10#px,10#px} size: {100#px,40#px} background: #gray{
+	            draw "" + world.formatted_time() at: {20#px, 25#px} font: AFONT0 color: #yellow;
 	        }
 	        	        			
 			species District refresh:false;
 			species RoadSegment;
 			species Building refresh:false;
+			species BusLine;
 			species BusStop refresh: false;
 			species TrafficSignal refresh: false;
 			species BusVehicle;
 		}
-		
+		/*
 		display "Waiting People" type: opengl background: #whitesmoke{
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
+			
+			overlay position: {1,0.01} size: {140#px,140#px} background: #gray{
+	            draw "Waiting people" at: {20#px, 15#px} font: AFONT0 color: #white;
+                
+                loop i from: 0 to: length(PDUZ_WP_THRESHOLDS)-1 {
+                    draw square(10#px) at: {20#px,(30+(15*i))#px} color: PDUZ_COLORS[i];
+                    draw '<' + PDUZ_WP_THRESHOLDS[i] at: {40#px,(33+(15*i))#px} color: #yellow font: AFONT0;
+                }
+                draw square(10#px) at: {20#px,(30+(15*length(PDUZ_WP_THRESHOLDS)))#px} color: last(PDUZ_COLORS);
+                draw '>' + last(PDUZ_WP_THRESHOLDS) at: {40#px,(33+(15*length(PDUZ_WP_THRESHOLDS)))#px} color: #yellow font: AFONT0;
+	        }
 			
 			species PDUZone aspect: waiting_people;
 		}
 		display "Waiting Time" type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
-		
+			
+			overlay position: {1,0.01} size: {140#px,140#px} background: #gray{
+	        	draw "Waiting time (m)" at: {20#px, 15#px} font: AFONT0 color: #white;
+	        	
+	        	 loop i from: 0 to: length(PDUZ_WT_THRESHOLDS)-1 {
+                    draw square(10#px) at: {20#px,(30+(15*i))#px} color: PDUZ_COLORS[i];
+                    draw '<' + int(PDUZ_WT_THRESHOLDS[i]/60) at: {40#px,(33+(15*i))#px} color: #yellow font: AFONT0;
+                }
+                draw square(10#px) at: {20#px,(30+(15*length(PDUZ_WT_THRESHOLDS)))#px} color: last(PDUZ_COLORS);
+                draw '>' + int(last(PDUZ_WT_THRESHOLDS)/60) at: {40#px,(33+(15*length(PDUZ_WT_THRESHOLDS)))#px} color: #yellow font: AFONT0;
+	        }
+	        
 			species PDUZone aspect: waiting_time;
 		}
 		
@@ -282,6 +347,6 @@ experiment MarraSIM type: gui {
 				data "2-Lines" color: #darkred value: length(BusTrip where (each.bt_finished and each.bt_type = BUS_TRIP_TWO_LINE))
 							marker_shape: marker_empty;
 			}
-		}
+		}*/
 	}
 }

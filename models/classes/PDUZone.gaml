@@ -9,6 +9,12 @@ model PDUZone
 
 import "BusStop.gaml"
 
+global {
+	list<rgb> PDUZ_COLORS <- [#white,#yellow,#orange,#tomato,#red,#darkred,#black];
+	list<int> PDUZ_WP_THRESHOLDS <- [10,50,100,200,400,750];
+	list<float> PDUZ_WT_THRESHOLDS <- [5#mn,10#mn,15#mn,20#mn,25#mn,30#mn];
+}
+
 species PDUZone schedules: [] parallel: true {
 	int zone_id;
 	string zone_name;
@@ -16,10 +22,6 @@ species PDUZone schedules: [] parallel: true {
 	rgb zone_col <- #whitesmoke;
 	rgb wp_col <- #white;
 	rgb wt_col <- #white;
-	
-	list<rgb> scale_colors <- [#white,#lightyellow,#yellow,#orange,#darkorange,#red,#darkred];
-	list<int> wp_thresholds <- [10,50,100,200,400,750];
-	list<float> wt_thresholds <- [5#mn,10#mn,15#mn,20#mn,25#mn,30#mn];
 		
 	aspect waiting_people {
 		draw shape color: wp_col border: #black;
@@ -31,13 +33,13 @@ species PDUZone schedules: [] parallel: true {
 	
 	action update_color {
 		int wp <- BusStop where (each.bs_zone = self) sum_of(length(each.bs_waiting_people));
-		wp_col <- wp < wp_thresholds[0] ? scale_colors[0] : (wp < wp_thresholds[1] ? scale_colors[1] :
-			(wp < wp_thresholds[2] ? scale_colors[2] : (wp < wp_thresholds[3] ? scale_colors[3] : 
-				(wp < wp_thresholds[4] ? scale_colors[4] : (wp < wp_thresholds[5] ? scale_colors[5] : scale_colors[6])))));
+		wp_col <- wp < PDUZ_WP_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wp < PDUZ_WP_THRESHOLDS[1] ? PDUZ_COLORS[1] :
+			(wp < PDUZ_WP_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wp < PDUZ_WP_THRESHOLDS[3] ? PDUZ_COLORS[3] : 
+				(wp < PDUZ_WP_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wp < PDUZ_WP_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
 		
 		int wt <- int(mean(BusStop where (each.bs_zone = self) accumulate (each.bs_waiting_people accumulate each.ind_waiting_time)));
-		wt_col <- wt < wt_thresholds[0] ? scale_colors[0] : (wt < wt_thresholds[1] ? scale_colors[1] :
-			(wt < wt_thresholds[2] ? scale_colors[2] : (wt < wt_thresholds[3] ? scale_colors[3] :
-				(wt < wt_thresholds[4] ? scale_colors[4] : (wt < wt_thresholds[5] ? scale_colors[5] : scale_colors[6])))));
+		wt_col <- wt < PDUZ_WT_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wt < PDUZ_WT_THRESHOLDS[1] ? PDUZ_COLORS[1] :
+			(wt < PDUZ_WT_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wt < PDUZ_WT_THRESHOLDS[3] ? PDUZ_COLORS[3] :
+				(wt < PDUZ_WT_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wt < PDUZ_WT_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
 	}
 }
