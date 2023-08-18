@@ -293,7 +293,7 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-		//layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
+		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
 		
 		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
@@ -310,7 +310,7 @@ experiment MarraSIM type: gui {
 			species TrafficSignal refresh: false;
 			species BusVehicle;
 		}
-		/*
+		
 		display "Waiting People" type: opengl background: #whitesmoke{
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
 			
@@ -358,6 +358,6 @@ experiment MarraSIM type: gui {
 				data "2-Lines" color: #darkred value: length(BusTrip where (each.bt_finished and each.bt_type = BUS_TRIP_TWO_LINE))
 							marker_shape: marker_empty;
 			}
-		}*/
+		}
 	}
 }
