@@ -15,7 +15,8 @@ global {
 	list<rgb> BL_COLORS <- [#darkblue,#darkcyan,#darkgoldenrod,#darkgray,#darkkhaki,#darkmagenta,#darkolivegreen,
 				#darkorchid,#darksalmon,#darkseagreen,#darkslateblue,#darkslategray,#darkturquoise,#darkviolet];
 	
-	bool show_buslines <- true;
+	bool show_buslines <- false;
+	//font LFONT0 <- font("Arial", 5, #bold);
 }
 
 species BusLine schedules: [] parallel: true {
@@ -33,7 +34,15 @@ species BusLine schedules: [] parallel: true {
 	
 	aspect default {
 		if show_buslines {
-			draw (bl_shape+7#meter) color: bl_color;	
+			draw (bl_shape+7.5#meter) color: bl_color;
+			draw circle(25#m) color: #white border:bl_color at: first(bl_outgoing_bs).location;
+			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: first(bl_outgoing_bs).location;
+			draw circle(25#m) color: #white border:bl_color at: last(bl_outgoing_bs).location;
+			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: last(bl_outgoing_bs).location;
+			draw circle(25#m) color: #white border:bl_color at: first(bl_return_bs).location;
+			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: first(bl_return_bs).location;
+			draw circle(25#m) color: #white border:bl_color at: last(bl_return_bs).location;
+			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: last(bl_return_bs).location;
 		}
 	}
 	

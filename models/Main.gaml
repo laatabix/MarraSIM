@@ -97,27 +97,36 @@ global {
 			}
 		}
 		// calculate distances of each bus line
+		geometry geom;
 		ask BusLine {
 			loop i from: 0 to: length(bl_outgoing_bs) - 2 {
-				bl_outgoing_dists <+ bl_outgoing_bs[i].dist_to_bs(bl_outgoing_bs[i+1]);
 				try {
-					geometry geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
-					bl_shape <- union(bl_shape,geom);
-				} catch {}
+					geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
+				} catch {
+					geom <- path_to(bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
+				}
+				bl_outgoing_dists <+ geom.perimeter;
+				bl_shape <- bl_shape + geom;
 			}
 			loop i from: 0 to: length(bl_return_bs) - 2 {
-				bl_return_dists <+ bl_return_bs[i].dist_to_bs(bl_return_bs[i+1]);
 				try {
-					geometry geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
-					bl_shape <- union(bl_shape,geom);
-				} catch {}
+					geom <- path_between(road_network, bl_return_bs[i], bl_return_bs[i+1]).shape;
+				} catch {
+					geom <- path_to(bl_return_bs[i], bl_return_bs[i+1]).shape;
+				}
+				bl_return_dists <+ geom.perimeter;
+				bl_shape <- bl_shape + geom;
 			}
+			first(bl_outgoing_bs).depart_or_terminus <- true;
+			last(bl_outgoing_bs).depart_or_terminus <- true;
+			first(bl_return_bs).depart_or_terminus <- true;
+			last(bl_return_bs).depart_or_terminus <- true;
 		}
 		ask BusStop {
 			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
 			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)); 
 		}
-		/*
+		
 		// create bus connection for each line
 		write "Creating bus connections ...";
 		dataMatrix <- matrix(csv_file("../includes/csv/bus_connections.csv",true));
@@ -208,7 +217,7 @@ global {
 				indiv_x.ind_bt_plan <+ self; 	
 			}
 		}
-		*/
+		
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
 	}
@@ -275,7 +284,9 @@ global {
 
 experiment MarraSIM type: gui {
 	
-	parameter "Show/Hide Bus Lines" category:"Visualization" var: show_buslines;
+	parameter "Show Bus Lines" category:"Visualization" var: show_buslines;
+	
+	parameter "Use Google Traffic" category:"Traffic" var: traffic_on;
 	
 	init {
 		minimum_cycle_duration <- 0.05;
@@ -290,7 +301,7 @@ experiment MarraSIM type: gui {
 			overlay position: {10#px,10#px} size: {100#px,40#px} background: #gray{
 	            draw "" + world.formatted_time() at: {20#px, 25#px} font: AFONT0 color: #yellow;
 	        }
-	        	        			
+	       	        	        			
 			species District refresh:false;
 			species RoadSegment;
 			species Building refresh:false;

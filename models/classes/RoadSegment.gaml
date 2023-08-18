@@ -7,7 +7,7 @@
 
 model RoadSegment
 
-import "TrafficSignal.gaml"
+import "BusLine.gaml"
 
 global {
 	// four traffic levels of Google Traffic 
@@ -30,6 +30,8 @@ species RoadSegment schedules: [] parallel: true {
 	list<TrafficSignal> rs_traffic_signals <- []; // list of traffic signal located on the road segment
 	
 	aspect default {
-		draw (shape+5#meter) color: rs_col;
+		if !show_buslines {
+			draw (shape+5#meter) color: rs_col;
+		}
 	}
 }

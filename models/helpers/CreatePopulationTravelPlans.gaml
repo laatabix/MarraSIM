@@ -112,6 +112,7 @@ global {
 				PDUZone d_zone <- PDUZone first_with (each.zone_id = j+1);
 				list<BusStop> dbstops <- BusStop where (each.bs_zone = d_zone);
 				create Individual number: ODMatrix[j,i]{
+					ind_id <- int(self);
 					ind_origin_zone <- o_zone;
 					ind_destin_zone <- d_zone;
 					ind_origin_bs <- one_of(obstops);
@@ -137,6 +138,7 @@ global {
 			} else { // else, compute
 				do make_plans;
 			}
+			write ind_id;
 		}
 		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_bt_plan));
 		
@@ -166,7 +168,6 @@ global {
 		save "ind,type,start,bl1,bs1,dir1,dist1,bl2,bs2,dir2,dist2,walk" format: 'text' rewrite: true to: "../../includes/csv/travel_plans.text";
 		
 		ask Individual {
-			ind_id <- int(self);
 			save '' + ind_id + ',' + ind_origin_zone.zone_id + ',' + ind_destin_zone.zone_id + ',' + 
 							ind_origin_bs.bs_id + ',' + ind_destin_bs.bs_id
 					format: "text" rewrite: false to: "../../includes/csv/populations.text";
