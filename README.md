@@ -29,10 +29,10 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 **Individual** : represents one passenger that has a PDU zone as origin and another one as a destination. Each individual has to take a bus or a taxi to reach its destination while minimizing travel time and cost. Each individual has four main attributes:
 
-  *ind_moving* : a boolean that indicates whether the individual has started its journey or not.
+  - *ind_moving* : a boolean that indicates whether the individual has started its journey or not.
   
-  *ind_arrived* : a boolean that indicates whether the individual has reached its destination or not.
+  - *ind_arrived* : a boolean that indicates whether the individual has reached its destination or not.
   
-  *ind_waiting_time* : an integer that indicates how much time (in seconds) the individual has waited in the bus stop before taking a transport mean.
+  - *ind_waiting_time* : an integer that indicates how much time (in seconds) the individual has waited in the bus stop before taking a transport mean.
   
-  *ind_trip_time* : an integer that indicates how much time (in seconds) the individual has traveled to reach its destination. This time starts when taking the first transport mean and ends when leaving the last transport mean.
+  - *ind_trip_time* : an integer that indicates how much time (in seconds) the individual has traveled to reach its destination. This time starts when taking the first transport mean and ends when leaving the last transport mean.
