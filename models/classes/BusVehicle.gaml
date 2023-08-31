@@ -58,7 +58,7 @@ species BusVehicle skills: [moving] {
 						ind_trip_time <- int(time - ind_trip_time);
 						ind_arrived <- true;
 						ind_moving <- false;
-						ind_actual_bt.bt_finished <- true;
+						ind_finished_bt <+ ind_actual_bt;
 						nn <- nn + 1;
 					} 
 					else { // connection

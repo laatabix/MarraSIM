@@ -29,8 +29,8 @@ global {
 	list<float> h_affluence <- [0.000,0.000,0.000,0.000,0.000,0.000,0.025,0.050,0.100,0.100,0.050,0.050, // [00:00 -> 11:00]
 								0.100,0.100,0.025,0.025,0.025,0.050,0.100,0.050,0.050,0.050,0.025,0.025];// [12:00 ->  23:00]
 	
-	// defining one simulation step as 5 seconds
-	float step <- 5#second;
+	// defining one simulation step as one minute
+	float step <- 1#minute;
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
 	// simulation parameters
@@ -180,7 +180,7 @@ global {
 		write "Creating population ...";
 		dataMatrix <- matrix(csv_file("../includes/csv/populations.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
-			create Individual{
+			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
 				ind_origin_zone <- PDUZone first_with (each.zone_id = int(dataMatrix[1,i]));
 				ind_destin_zone <- PDUZone first_with (each.zone_id = int(dataMatrix[2,i]));
@@ -347,15 +347,15 @@ experiment MarraSIM type: gui {
 		display Mobility type: java2D background: #whitesmoke {
 			chart "Travellers" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0} x_label: "Time" {
-				data "Waiting" color: #red value: BusStop sum_of(length(each.bs_waiting_people where (each.ind_moving))) marker_shape: marker_empty;
+				data "Waiting" color: #red value: BusStop sum_of(length(each.bs_waiting_people)) marker_shape: marker_empty;
 				data "On bus" color: #green value: BusVehicle sum_of(length(each.bv_passengers)) marker_shape: marker_empty;
 				data "Arrived" color: #blue value: BusStop sum_of(length(each.bs_arrived_people)) marker_shape: marker_empty;
 			}
 			chart "Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0.5} x_label: "Time" {
-				data "1-Line" color: #darkgreen value: length(BusTrip where (each.bt_finished and each.bt_type = BUS_TRIP_ONE_LINE))
+				data "1-Line" color: #darkgreen value: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_ONE_LINE))
 								marker_shape: marker_empty;
-				data "2-Lines" color: #darkred value: length(BusTrip where (each.bt_finished and each.bt_type = BUS_TRIP_TWO_LINE))
+				data "2-Lines" color: #darkred value: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_TWO_LINE))
 							marker_shape: marker_empty;
 			}
 		}

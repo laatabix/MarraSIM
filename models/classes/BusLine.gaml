@@ -101,38 +101,5 @@ species BusLine schedules: [] parallel: true {
 			return indx < length(bl_return_bs)-1 ? bl_return_bs[indx+1] : nil;
 		}
 	}
-	
-	// the two bslines have the same previous outgoing or return BS
-	bool unnecessary_bc (int dir1, BusStop bs1, BusLine bl2, int dir2, BusStop bs2) {
-		if self.previous_bs(dir1, bs1) = bs2 or self.next_bs(dir1, bs1) = bs2
-				or bl2.previous_bs(dir2, bs2) = bs1 or bl2.next_bs(dir2, bs2) = bs1 {
-			return true;
-		}
-		if self.previous_bs(dir1, bs1) = bl2.previous_bs (dir2, bs2) or self.next_bs(dir1, bs1) = bl2.next_bs (dir2, bs2)
-			or self.previous_bs(dir1, bs1) = bl2.next_bs (dir2, bs2) or self.next_bs(dir1, bs1) = bl2.previous_bs (dir2, bs2){
-			return true;
-		}
-		return false;
-	}
-	
-	bool similar_bc_exists (int dir1, BusStop bs1, BusLine bl2, int dir2, BusStop bs2) {
-		loop con over: (bl_outgoing_connections + bl_return_connections) where (each.bc_bus_lines contains bl2) {
-			if con.bc_bus_lines[0] = self and con.bc_bus_directions[0] = dir1 
-						and con.bc_bus_stops[0] in [bs1,previous_bs(dir1, bs1),next_bs(dir1, bs1)] {
-				if con.bc_bus_lines[1] = bl2 and con.bc_bus_directions[1] = dir2 
-						and con.bc_bus_stops[1] in [bs2,bl2.previous_bs(dir2, bs2),bl2.next_bs(dir2, bs2)] {
-					return true;
-				}
-			}
-			if con.bc_bus_lines[1] = self and con.bc_bus_directions[1] = dir1
-						and con.bc_bus_stops[1] in [bs1,previous_bs(dir1,bs1),next_bs(dir1,bs1)] {
- 				if con.bc_bus_lines[0] = bl2 and con.bc_bus_directions[0] = dir2
-						and con.bc_bus_stops[0] in [bs2,bl2.previous_bs(dir2,bs2),bl2.next_bs(dir2,bs2)] {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 }
 

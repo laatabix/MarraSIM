@@ -154,7 +154,7 @@ global {
 				self.ind_origin_bs <- ind.ind_origin_bs;
 				self.ind_destin_zone <- ind.ind_destin_zone;
 				self.ind_destin_bs <- ind.ind_destin_bs;
-				self.ind_bt_plan <- copy (ind.ind_bt_plan);	
+				self.ind_bt_plan <- copy(ind.ind_bt_plan);	
 			} else {
 				do die;
 			}

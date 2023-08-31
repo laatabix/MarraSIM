@@ -23,6 +23,7 @@ species Individual parallel: true {
 	int ind_trip_time <- 0;
 	BusTrip ind_actual_bt <- nil;
 	int ind_current_plan_index <- 0;
+	list<BusTrip> ind_finished_bt <- [];
 	
 	BusStop tmp_start_bs;
 	BusLine tmp_bl;

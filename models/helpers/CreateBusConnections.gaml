@@ -79,63 +79,49 @@ global {
 		
 		// create bus connection for each bus line
 		write "Creating bus connections ...";
-		ask BusLine {
-			// for each bus stop in the bus line
-			loop bs1 over: self.bl_outgoing_bs - self.bl_outgoing_bs[0] {
-				// for all stops that are in a circle of 400m around and where there are other bus lines
-				if !empty(bs1.bs_neighbors) {
-					// get the list of bus lines that pass by these bus stops
-					list<BusLine> connected_bls <- bs1.bs_neighbors accumulate (each.bs_bus_lines);
-					connected_bls <- remove_duplicates(connected_bls) - self;
-					loop cbl over: connected_bls {
-						// create a connection between bs1 and its closest bustop that is in
-						// the outgoing list of the connected bus
-						list<BusStop> inter_bss <- bs1.bs_neighbors inter cbl.bl_outgoing_bs;
-						BusStop bs2 <- length(inter_bss) = 1 ? inter_bss[0] : inter_bss closest_to bs1;
-						if bs2 != nil and !unnecessary_bc(BUS_DIRECTION_OUTGOING, bs1, cbl, BUS_DIRECTION_OUTGOING, bs2) {
-							if !similar_bc_exists (BUS_DIRECTION_OUTGOING, bs1, cbl, BUS_DIRECTION_OUTGOING, bs2) {
-								do create_bc(bs1, BUS_DIRECTION_OUTGOING, cbl, bs2, BUS_DIRECTION_OUTGOING,-1);	
+		loop i from: 0 to: length(BusLine) - 2 {
+			loop j from: i+1 to: length(BusLine) - 1 {
+				list<list<BusStop>> mybss <- [BusLine[i].bl_outgoing_bs,BusLine[i].bl_return_bs,
+												BusLine[j].bl_outgoing_bs,BusLine[j].bl_return_bs];
+				list<int> mydirs <- [BUS_DIRECTION_OUTGOING,BUS_DIRECTION_RETURN,BUS_DIRECTION_OUTGOING,BUS_DIRECTION_RETURN];								
+				
+				loop lisa over: [[0,2],[0,3],[1,2],[1,3]] {
+					list<BusStop> inter_bss <- mybss[lisa[0]] where !empty(each.bs_neighbors inter mybss[lisa[1]]);		
+					if !empty(inter_bss) {
+						list<BusStop> bs_connections <- [inter_bss[0]];
+						int last_con_idx <- mybss[lisa[0]] index_of inter_bss[0];
+						loop bs0 over: inter_bss - inter_bss[0] {
+							int idx <- mybss[lisa[0]] index_of bs0;
+							if idx != last_con_idx + 1 {
+								bs_connections <+ bs0;
 							}
+							last_con_idx <- idx;
 						}
-						// another connection with the return list of the connected bus
-						inter_bss <- bs1.bs_neighbors inter cbl.bl_return_bs;
-						bs2 <- length(inter_bss) = 1 ? inter_bss[0] : inter_bss closest_to bs1;
-						if bs2 != nil and !unnecessary_bc(BUS_DIRECTION_OUTGOING, bs1, cbl, BUS_DIRECTION_RETURN, bs2) {
-							if !similar_bc_exists (BUS_DIRECTION_OUTGOING, bs1, cbl, BUS_DIRECTION_RETURN, bs2) {
-								do create_bc(bs1, BUS_DIRECTION_OUTGOING, cbl, bs2, BUS_DIRECTION_RETURN,-1);	
+						loop bs0 over: bs_connections {
+							if !((mydirs[lisa[0]] = BUS_DIRECTION_OUTGOING and bs0 = BusLine[i].bl_outgoing_bs[0]) or
+								(mydirs[lisa[0]] = BUS_DIRECTION_RETURN and bs0 = BusLine[i].bl_return_bs[0])) {
+								ask BusLine[i] {
+									BusStop bs1 <- mybss[lisa[1]] contains bs0 ? bs0 : mybss[lisa[1]] closest_to bs0;
+									do create_bc(bs0, mydirs[lisa[0]], BusLine[j], bs1, mydirs[lisa[1]],-1);
+								}		
 							}
 						}
 					}
+				}
+			}			
+		}
+		
+		write "Optimizing bus connections... ";
+		ask BusConnection {
+			BusStop bs <- bc_bus_lines[0].next_bs(bc_bus_directions[0],bc_bus_stops[0]);
+			if bs != nil {
+				int dd <- bs.dist_to_bs(bc_bus_stops[1]);
+				if dd < bc_connection_distance  {
+					bc_bus_stops[0] <- bs;
+					bc_connection_distance <- dd;
 				}
 			}
-			loop bs1 over: self.bl_return_bs - self.bl_return_bs[0] {
-				// for all stops that are in a circle of 400m around and where there are other bus lines
-				if !empty(bs1.bs_neighbors) {
-					// get the list of bus lines that pass by these bus stops
-					list<BusLine> connected_bls <- bs1.bs_neighbors accumulate (each.bs_bus_lines);
-					connected_bls <- remove_duplicates(connected_bls) - self;
-					loop cbl over: connected_bls {
-						// create a connection between bs1 and its closest bustop that is in
-						// the outgoing list of the connected bus
-						list<BusStop> inter_bss <- bs1.bs_neighbors inter cbl.bl_outgoing_bs;
-						BusStop bs2 <- length(inter_bss) = 1 ? inter_bss[0] : inter_bss closest_to bs1;
-						if bs2 != nil and !unnecessary_bc(BUS_DIRECTION_RETURN, bs1, cbl, BUS_DIRECTION_OUTGOING, bs2) {
-							if !similar_bc_exists (BUS_DIRECTION_RETURN, bs1, cbl, BUS_DIRECTION_OUTGOING, bs2) {
-								do create_bc(bs1, BUS_DIRECTION_RETURN, cbl, bs2, BUS_DIRECTION_OUTGOING,-1);	
-							}	
-						}
-						// another connection with the return list of the connected bus
-						inter_bss <- bs1.bs_neighbors inter cbl.bl_return_bs;
-						bs2 <- length(inter_bss) = 1 ? inter_bss[0] : inter_bss closest_to bs1;
-						if bs2 != nil and !unnecessary_bc(BUS_DIRECTION_RETURN, bs1, cbl, BUS_DIRECTION_RETURN, bs2) {
-							if !similar_bc_exists (BUS_DIRECTION_RETURN, bs1, cbl, BUS_DIRECTION_RETURN, bs2) {
-								do create_bc(bs1, BUS_DIRECTION_RETURN, cbl, bs2, BUS_DIRECTION_RETURN,-1);	
-							}
-						}
-					}
-				}
-			}				
-		}		
+		}
 		
 		write "Number of created bus connections: " + length(BusConnection);
 		
@@ -147,7 +133,7 @@ global {
 				+ ',' + bc_bus_directions[0] + ',' + bc_bus_directions[1] + ',' + bc_connection_distance
 				format: "text" rewrite: false to: "../../includes/csv/bus_connections.text";	
 		}
-		bool rn <- rename_file("../../includes/csv/bus_connections.text","../../includes/csv/bus_connections.csv");
+		bool rn <- rename_file("../../includes/csv/bus_connections.text","../../includes/csv/bus_connections.csv");//*/
 		write "DONE." color: #green;	
 	}
 }

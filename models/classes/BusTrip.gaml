@@ -22,5 +22,4 @@ species BusTrip schedules: [] {
 	list<int> bt_bus_directions <- []; // list of bus directions to take
 	list<int> bt_bus_dists <- [];
 	int bt_walk_dist <- 0;
-	bool bt_finished <- false;
 }
