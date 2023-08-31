@@ -13,7 +13,6 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   <img width="800" height="504" src="https://github.com/laatabix/MarraSIM/assets/15381143/e59d7cfc-776e-4382-924e-a8ae7967f4c1">
 </p>
 
-
 **Building** : these agents represent all types of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included for visualization purposes only.
 
 **District** : represents one entity of the city's administrative division. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara.
@@ -22,5 +21,8 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   <img width="440" height="355" src="https://github.com/laatabix/MarraSIM/assets/15381143/a626c016-c7d0-4db0-bb2e-b2ae8e0defcb">
 </p>
 
+**PDUZone** : represents one entity of the adopted division in the PDU (Plan de D\'eplacements Urbains) document. The PDU is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it.
 
-
+<p align="center">
+  <img width="440" height="355" src="https://github.com/laatabix/MarraSIM/assets/15381143/38223da0-64a9-4e9d-88f8-1defb79f8874">
+</p>
