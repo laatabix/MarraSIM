@@ -36,7 +36,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 **BusStop** : represents a location where a bus can take or drop off individuals. A bus stop has a name and may be an ordinary in-between stop, or a depart/terminus for one or multiple bus lines.
 
 **RoadSegment** : represents one segment of the road network. All roads are divided into segments of 100m maximum. If a road segment is in the urban zone (represented by the boolean attribute *rs_in_city*, it can have a traffic density of four levels corresponding to the levels of the Google Traffic API:
-  - Normal with no traffic delays (![](https://placehold.co/10x10/008000/008000.png)green).
-  - Medium traffic (![](https://placehold.co/10x10/ffa500/ffa500.png)orange).
-  - High traffic ![](https://placehold.co/10x10/ff0000/ff0000.png)red)
-  - Heavy traffic (![](https://placehold.co/10x10/8b0000/8b0000.png)dark red).
+  - ![](https://placehold.co/10x10/008000/008000.png) Normal with no traffic delays (green).
+  - ![](https://placehold.co/10x10/ffa500/ffa500.png) Medium traffic (orange).
+  - ![](https://placehold.co/10x10/ff0000/ff0000.png) High traffic (red).
+  - ![](https://placehold.co/10x10/8b0000/8b0000.png) Heavy traffic (dark red).
