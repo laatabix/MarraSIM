@@ -4,4 +4,6 @@ MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and publi
 
 ## Entities, state variables, and scales
 
-![diaclasses](https://github.com/laatabix/MarraSIM/assets/15381143/64e56d84-7864-4fe6-9b0b-30249928de9c)
+**Building** : represents all types of buildings in the city (residential, industrial, commercial, \dots). In the current version of the model, buildings are included for visualization purposes only.
+
+![diaclasses](https://github.com/laatabix/MarraSIM/assets/15381143/e59d7cfc-776e-4382-924e-a8ae7967f4c1)
