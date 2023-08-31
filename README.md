@@ -32,3 +32,5 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *ind_arrived* : a boolean that indicates whether the individual has reached its destination or not.
   - *ind_waiting_time* : an integer that indicates how much time (in seconds) the individual has waited in the bus stop before taking a transport mean.
   - *ind_trip_time* : an integer that indicates how much time (in seconds) the individual has traveled to reach its destination. This time starts when taking the first transport mean and ends when leaving the last transport mean.
+
+**BusStop** : represents a point where a bus can take or drop off individuals.
