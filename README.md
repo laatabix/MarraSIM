@@ -33,10 +33,20 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *ind_waiting_time* : an integer that indicates how much time (in seconds) the individual has waited in the bus stop before taking a transport mean.
   - *ind_trip_time* : an integer that indicates how much time (in seconds) the individual has traveled to reach its destination. This time starts when taking the first transport mean and ends when leaving the last transport mean.
 
-**BusStop** : represents a location where a bus can take or drop off individuals. A bus stop has a name and may be an ordinary in-between stop, or a depart/terminus for one or multiple bus lines.
+**BusStop** : represents a location where a bus can take or drop off individuals. A bus stop has a name and may be an ordinary in-between stop, or a departure/terminus for one or multiple bus lines.
 
 **RoadSegment** : represents one segment of the road network. All roads are divided into segments of 100m maximum. If a road segment is in the urban zone (represented by the boolean attribute *rs_in_city*, it can have a traffic density of four levels corresponding to the levels of the Google Traffic API:
   - ![](https://placehold.co/10x10/008000/008000.png) Normal with no traffic delays (green).
   - ![](https://placehold.co/10x10/ffa500/ffa500.png) Medium traffic (orange).
   - ![](https://placehold.co/10x10/ff0000/ff0000.png) High traffic (red).
   - ![](https://placehold.co/10x10/8b0000/8b0000.png) Heavy traffic (dark red).
+
+**TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
+
+**BusLine** : represents two paths of outgoing and return bus stops between a start (departure) and end (terminus) points. Each bus line is named and has the following attributes:
+  - *bl_interval_time* :
+  - *bl_commercial_speed* :
+  - *bl_outgoing_distances* :
+  - *bl_return_distances* :
+
+ 
