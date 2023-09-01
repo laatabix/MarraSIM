@@ -10,7 +10,7 @@ The purpose of the model is to simulate public transport in Marrakesh to underst
 The model simulates a day (06:00 - 23:00) of public transport journeys in Marrakesh. The time step represents one minute. Bus vehicles move between bus stops to take and drop off people in outgoing and return journeys between a start point and a terminus. To simulate these dynamics, 11 agents are implemented to represent the city environment and the active agents. The following figure depicts the class diagram of the model.
 
 <p align="center">
-  <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/361cd635-632f-4ee1-82b6-dd3e41974ea6">
+  <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/528ec2fb-b09b-489f-a7fb-abbb90990256">
 </p>
 
 **Building** : these agents represent all types of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included for visualization purposes only.
@@ -55,4 +55,8 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 **BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two different but close bus stops otherwise. The proximity in this model is defined as a 400 m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered.
 
-**BusTrip** : 
+**BusTrip** : represents a trip between an origin and a destination bus stops using one or two bus lines. The following attributes characterize a bus trip:
+  -*bt_type* : indicates whether the trip is using one or two bus lines.
+  - *bt_bus_directions* : stores the direction (outgoing or return) of each bus used in the trip.
+  - *bt_bus_distances* : stores the traveled distances by the buses used in the trip.
+  - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
