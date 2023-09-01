@@ -11,7 +11,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 <p align="center">
   <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/528ec2fb-b09b-489f-a7fb-abbb90990256">
-<br/><b><i>UML Class diagram of the MarraSIM model.</i></b>
+<br/><i>UML Class diagram of the MarraSIM model.</i>
 </p>
 
 **Building** : these agents represent all types of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included for visualization purposes only.
@@ -20,14 +20,14 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 <p align="center">
   <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/a626c016-c7d0-4db0-bb2e-b2ae8e0defcb">
-  <br/><u><i>Administrative districts of Marrakesh.</i></u>
+  <br/><i>Administrative districts of Marrakesh.</i>
 </p>
 
 **PDUZone** : represents one entity of the adopted division in the PDU (Plan de D\'eplacements Urbains) document. The PDU is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it. Each PDU zone is identified by a code and a name and may belong to one or multiple administrative districts.
 
 <p align="center">
   <img width="440" height="355" alt="PDU zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/41a43e8f-a5eb-4161-b4c5-e1b77ea601e5">
-  <br/><u><i>The 27 PDU zones of Marrakesh.</i></u>
+  <br/><i>The 27 PDU zones of Marrakesh.</i>
 </p>
 
 **Individual** : represents one passenger that has a PDU zone as origin and another one as a destination. Each individual has to take a bus or a taxi to reach its destination while minimizing travel time and cost. Each individual has four main attributes:
@@ -46,7 +46,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 <p align="center">
   <img width="440" height="355" alt="Urban roads of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/4261175a-b6ca-49ca-9110-9ea0d16d91e7">
-  <br/><u><i>Urban road segments in Marrakesh.</i></u>
+  <br/><i>Urban road segments in Marrakesh.</i>
 </p>
 
 **TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
