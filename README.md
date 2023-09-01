@@ -50,7 +50,9 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 **BusVehicle** : represents a vehicle that serves a bus line. The same bus line can be served by multiple vehicles. Each bus vehicle has the following attributes:
   - *bv_direction* : indicates whether a bus is currently in an outgoing or return direction.
   - *bv_speed* : indicates the true speed of a moving bus.
-  - *bv_max_capacity* : indicates the maximum number of individuals that the bus can take.
+  - *bv_max_capacity* : indicates the maximum number of passengers that the bus can take.
   - *bv_moving* : a boolean to indicate whether a bus is currently moving or not.
 
- 
+**BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two different but close bus stops otherwise. The proximity in this model is defined as a 400 m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered.
+
+**BusTrip** : 
