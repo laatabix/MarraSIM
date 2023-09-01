@@ -43,10 +43,14 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 **TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
 
-**BusLine** : represents two paths of outgoing and return bus stops between a start (departure) and end (terminus) points. Each bus line is named and has the following attributes:
-  - *bl_interval_time* :
-  - *bl_commercial_speed* :
-  - *bl_outgoing_distances* :
-  - *bl_return_distances* :
+**BusLine** : represents two paths of outgoing and return bus stops between a start (departure) and end (terminus) points. Each bus line is named and has the two following characteristics:
+  - *bl_interval_time* : indicates the theoretical interval time between buses of the same line.
+  - *bl_commercial_speed* : indicates the average speed of buses while considering the constraints of bus stops, traffic lights, and congestion.
+
+**BusVehicle** : represents a vehicle that serves a bus line. The same bus line can be served by multiple vehicles. Each bus vehicle has the following attributes:
+  - *bv_direction* :
+  - *bv_speed* :
+  - *bv_max_capacity* :
+  - *bv_moving* :
 
  
