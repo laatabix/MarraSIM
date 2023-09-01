@@ -56,7 +56,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 **BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two different but close bus stops otherwise. The proximity in this model is defined as a 400 m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered.
 
 **BusTrip** : represents a trip between an origin and a destination bus stops using one or two bus lines. The following attributes characterize a bus trip:
-  -*bt_type* : indicates whether the trip is using one or two bus lines.
+  - *bt_type* : indicates whether the trip is using one or two bus lines.
   - *bt_bus_directions* : stores the direction (outgoing or return) of each bus used in the trip.
   - *bt_bus_distances* : stores the traveled distances by the buses used in the trip.
   - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
