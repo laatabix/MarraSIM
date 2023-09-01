@@ -48,9 +48,9 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *bl_commercial_speed* : indicates the average speed of buses while considering the constraints of bus stops, traffic lights, and congestion.
 
 **BusVehicle** : represents a vehicle that serves a bus line. The same bus line can be served by multiple vehicles. Each bus vehicle has the following attributes:
-  - *bv_direction* :
-  - *bv_speed* :
-  - *bv_max_capacity* :
-  - *bv_moving* :
+  - *bv_direction* : indicates whether a bus is currently in an outgoing or return direction.
+  - *bv_speed* : indicates the true speed of a moving bus.
+  - *bv_max_capacity* : indicates the maximum number of individuals that the bus can take.
+  - *bv_moving* : a boolean to indicate whether a bus is currently moving or not.
 
  
