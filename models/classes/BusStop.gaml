@@ -26,7 +26,7 @@ species BusStop schedules: [] parallel: true{
 	list<Individual> bs_waiting_people <- [];
 	list<Individual> bs_arrived_people <- [];
 	list<BusStop> bs_neighbors <- []; // bus stops at a distance of 400m
-	bool depart_or_terminus <- false;
+	bool bs_depart_or_terminus <- false;
 
 	//calculate distance between two bus stops
 	int dist_to_bs (BusStop bs2) {
@@ -38,7 +38,7 @@ species BusStop schedules: [] parallel: true{
 	}
 	
 	aspect default {
-		if !(show_buslines and depart_or_terminus) {
+		if !(show_buslines and bs_depart_or_terminus) {
 			draw square(30#meter) color: #gamablue;
 			draw square(15#meter) color: #gold;
 		}	

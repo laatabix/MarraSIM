@@ -117,10 +117,10 @@ global {
 				bl_return_dists <+ geom.perimeter;
 				bl_shape <- bl_shape + geom;
 			}
-			first(bl_outgoing_bs).depart_or_terminus <- true;
-			last(bl_outgoing_bs).depart_or_terminus <- true;
-			first(bl_return_bs).depart_or_terminus <- true;
-			last(bl_return_bs).depart_or_terminus <- true;
+			first(bl_outgoing_bs).bs_depart_or_terminus <- true;
+			last(bl_outgoing_bs).bs_depart_or_terminus <- true;
+			first(bl_return_bs).bs_depart_or_terminus <- true;
+			last(bl_return_bs).bs_depart_or_terminus <- true;
 		}
 		ask BusStop {
 			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
