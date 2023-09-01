@@ -11,7 +11,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 <p align="center">
   <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/528ec2fb-b09b-489f-a7fb-abbb90990256">
-<br/>***UML Class diagram of the MarraSIM model.***
+<br/><b><i>UML Class diagram of the MarraSIM model.</i></b>
 </p>
 
 **Building** : these agents represent all types of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included for visualization purposes only.
