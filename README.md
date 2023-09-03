@@ -10,7 +10,8 @@ The purpose of the model is to simulate public transport in Marrakesh to underst
 The model simulates a day (06:00 - 23:00) of public transport journeys in Marrakesh. The time step represents one minute. Bus vehicles move between bus stops to take and drop off people in outgoing and return journeys between a start point and a terminus. To simulate these dynamics, 11 agents are implemented to represent the city environment and the active agents. The following figure depicts the class diagram of the model.
 
 <p align="center">
-  <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/361cd635-632f-4ee1-82b6-dd3e41974ea6">
+  <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/528ec2fb-b09b-489f-a7fb-abbb90990256">
+<br/><i>UML Class diagram of the MarraSIM model.</i>
 </p>
 
 **Building** : these agents represent all types of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included for visualization purposes only.
@@ -19,12 +20,14 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 <p align="center">
   <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/a626c016-c7d0-4db0-bb2e-b2ae8e0defcb">
+  <br/><i>Administrative districts of Marrakesh.</i>
 </p>
 
 **PDUZone** : represents one entity of the adopted division in the PDU (Plan de D\'eplacements Urbains) document. The PDU is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it. Each PDU zone is identified by a code and a name and may belong to one or multiple administrative districts.
 
 <p align="center">
   <img width="440" height="355" alt="PDU zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/41a43e8f-a5eb-4161-b4c5-e1b77ea601e5">
+  <br/><i>The 27 PDU zones of Marrakesh.</i>
 </p>
 
 **Individual** : represents one passenger that has a PDU zone as origin and another one as a destination. Each individual has to take a bus or a taxi to reach its destination while minimizing travel time and cost. Each individual has four main attributes:
@@ -41,6 +44,11 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - ![](https://placehold.co/10x10/ff0000/ff0000.png) High traffic (red).
   - ![](https://placehold.co/10x10/8b0000/8b0000.png) Heavy traffic (dark red).
 
+<p align="center">
+  <img width="440" height="355" alt="Urban roads of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/4261175a-b6ca-49ca-9110-9ea0d16d91e7">
+  <br/><i>Urban road segments in Marrakesh.</i>
+</p>
+
 **TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
 
 **BusLine** : represents two paths of outgoing and return bus stops between a start (departure) and end (terminus) points. Each bus line is named and has the two following characteristics:
@@ -55,4 +63,8 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 **BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two different but close bus stops otherwise. The proximity in this model is defined as a 400 m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered.
 
-**BusTrip** : 
+**BusTrip** : represents a trip between an origin and a destination bus stops using one or two bus lines. The following attributes characterize a bus trip:
+  - *bt_type* : indicates whether the trip is using one or two bus lines.
+  - *bt_bus_directions* : stores the direction (outgoing or return) of each bus used in the trip.
+  - *bt_bus_distances* : stores the traveled distances by the buses used in the trip.
+  - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
