@@ -138,7 +138,7 @@ global {
 			} else { // else, compute
 				do make_plans;
 			}
-			//write ind_id;
+			write ind_id;
 		}
 		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_bt_plan));
 		
