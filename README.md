@@ -68,3 +68,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *bt_bus_directions* : stores the direction (outgoing or return) of each bus used in the trip.
   - *bt_bus_distances* : stores the traveled distances by the buses used in the trip.
   - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
+
+### Process overview and scheduling
+
+# Preliminary results
