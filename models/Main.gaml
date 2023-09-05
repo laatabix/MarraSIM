@@ -36,6 +36,7 @@ global {
 	// simulation parameters
 	bool traffic_on <- true; // include congestion from Google Traffic
 	bool transfer_on <- false; // allow ticket transfer between busses of the same trip
+	bool save_data_on <- false; // whether to save simulation data (to /results) or not
 		
 	init {
 		write "--+-- START OF INIT --+--" color:#green;	
@@ -293,8 +294,7 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
-		
+				
 		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
@@ -310,6 +310,8 @@ experiment MarraSIM type: gui {
 			species TrafficSignal refresh: false;
 			species BusVehicle;
 		}
+		
+		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
 		
 		display "Waiting People" type: opengl background: #whitesmoke{
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
