@@ -111,6 +111,7 @@ At each time step (each minute), ...
 ### Implementation details 
 
 ### Initialization
+At initialization, the simulation environment is created based on the shapefiles representing districts, buildings, PDU zones, road network, traffic signals, and bus stops. 
 
 ### Input data
 #### Data overview
