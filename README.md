@@ -122,3 +122,9 @@ At initialization, the simulation environment is created based on the shapefiles
 ### Submodels
 
 # Preliminary results
+
+<p align="center">
+  <img width="800" height="380" alt="GUI of MarraSIM under GAMA" src="https://github.com/laatabix/MarraSIM/assets/15381143/f5c84e61-50fe-48e0-933f-13558eff9212">
+  <br/><i>The graphical interface of MarraSIM model under the GAMA platform.</i>
+</p>
+
