@@ -1,3 +1,6 @@
+# I-Maroc Project
+I-Maroc (**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision) is project that aims to design and implement computer simulations for health and environment by means of advanced artificial intelligence, data analysis, and mathematical tools.
+
 # MarraSIM Model
 MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the MarraSIM model using the structure of the ODD (Overview, Design concepts, Details) protocol.
 
