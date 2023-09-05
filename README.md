@@ -1,5 +1,16 @@
 # I-Maroc Project
-**I-Maroc** (_**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision_) is project that aims to design and implement computer simulations for health and environment by means of advanced artificial intelligence, data analysis, and mathematical tools. In the workpackage 3 (urban and inter-urban mobility), we work on modeling multiple aspects of road traffic in Marrakesh to propose solutions and scenarios in order to improve mobility and reduce pollution and congestion. We present here **MarraSIM**, our agent-based model that simulates the public transport network in Marrakesh.
+
+<p align="center">
+  <img width="600" height="150" alt="IMAROC header" src="https://github.com/laatabix/MarraSIM/assets/15381143/7380bdce-d16f-4a83-93ed-c6e8b3e04ac7">
+</p>
+
+**I-Maroc** (_**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision_) is a project that aims to design and implement computer simulations for health and environment by means of advanced artificial intelligence, data analysis, and mathematical tools. In the workpackage 3 (urban and inter-urban mobility), we work on modeling multiple aspects of road traffic in Marrakesh to propose solutions and scenarios in order to improve mobility and reduce pollution and congestion. We mainly use artificial intelligence to generate synthetical road traffic, and simulate/optimize the public transport network. These two axis are intended to minimize the road traffic related pollution which will be evaluated using the [**MarrakAIR**](https://github.com/gnoubi/MarrakAir) model.  
+
+<p align="center">
+  <img width="600" height="240" alt="IMAROC - WP3" src="https://github.com/laatabix/MarraSIM/assets/15381143/97889f53-1766-4ea0-bb79-32ac1efc8cef">
+</p>
+
+We present here **MarraSIM**, our agent-based model that simulates the public transport network in Marrakesh. MarraSIM uses the [GAMA platform](https://github.com/gama-platform/).
 
 # MarraSIM Model
 MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the ODD (Overview, Design concepts, Details) standard.
