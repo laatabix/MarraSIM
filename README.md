@@ -87,9 +87,9 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 At each time step (each minute), ...
 
 ## Design concepts
-  1- *Theoretical and empirical background* :
+  1- *Theoretical and empirical background* : agents in MarraSIM represent principal concepts involved in the public transport and road traffic.
   
-  2- *Individual decision-making* :
+  2- *Individual decision-making* : 
 
   3- *Learning* : in the current version of the model, agents do not perform any learning mechanism.
 
