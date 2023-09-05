@@ -2,7 +2,7 @@
 **I-Maroc** (_**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision_) is project that aims to design and implement computer simulations for health and environment by means of advanced artificial intelligence, data analysis, and mathematical tools. In the workpackage 3 (Urban and inter-urban mobility), we work on modeling multiple aspects of road traffic in Marrakesh to propose solutions and scenarios in order to improve mobility and reduce pollution and congestion. We present here **MarraSIM**, our agent-based model that simulates the public transport network in Marrakesh.
 
 # MarraSIM Model
-MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the MarraSIM model using the structure of the ODD (Overview, Design concepts, Details) protocol.
+MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the ODD (Overview, Design concepts, Details) standard.
 
 ## Overview
 
