@@ -13,7 +13,7 @@
 We present here **MarraSIM**, our agent-based model that simulates the public transport network in Marrakesh. MarraSIM uses the [GAMA platform](https://github.com/gama-platform/).
 
 # MarraSIM Model
-MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the ODD (Overview, Design concepts, Details) standard.
+MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the ODD (Overview, Design concepts, Details) standard and its extension ODD+2D (ODD + Decision + Data).
 
 ## Overview
 
@@ -37,7 +37,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   <br/><i>Administrative districts of Marrakesh.</i>
 </p>
 
-**PDUZone** : represents one entity of the adopted division in the PDU (Plan de D\'eplacements Urbains) document. The PDU is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it. Each PDU zone is identified by a code and a name and may belong to one or multiple administrative districts.
+**PDUZone** : represents one entity of the adopted division in the PDU (Plan de Déplacements Urbains) document. The PDU is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it. Each PDU zone is identified by a code and a name and may belong to one or multiple administrative districts.
 
 <p align="center">
   <img width="440" height="355" alt="PDU zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/41a43e8f-a5eb-4161-b4c5-e1b77ea601e5">
@@ -84,5 +84,40 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
 
 ### Process overview and scheduling
+At each time step (each minute), ...
+
+## Design concepts
+  1- *Theoretical and empirical background* :
+  
+  2- *Individual decision-making* :
+
+  3- *Learning* : in the current version of the model, agents do not perform any learning mechanism.
+
+  4- *Individual sensing* :
+
+  5- *Individual prediction* : in the current version of the model, agents do not make any predictions.
+
+  6- *Interaction* :
+
+  7- *Collectives* :
+
+  8- *Heterogeneity* :
+
+  9- *Stochasticity* :
+
+  10- *Observation* : 
+
+## Details
+### Implementation details 
+
+### Initialization
+
+### Input data
+#### Data overview
+#### Data structure
+#### Data mapping
+#### Data patterns
+
+### Submodels
 
 # Preliminary results
