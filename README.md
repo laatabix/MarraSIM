@@ -60,7 +60,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 <p align="center">
   <img width="440" height="355" alt="Urban roads of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/4261175a-b6ca-49ca-9110-9ea0d16d91e7">
-  <br/><i>Urban road segments in Marrakesh.</i>
+  <br/><i>Urban road network of Marrakesh.</i>
 </p>
 
 **TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
