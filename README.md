@@ -111,7 +111,7 @@ At each time step (each minute), ...
 ### Implementation details 
 
 ### Initialization
-At initialization, the simulation environment is created based on the shapefiles representing districts, buildings, PDU zones, road network, traffic signals, and bus stops. 
+At initialization, the simulation environment is created based on the shapefiles (in "*/includes/gis/*") representing districts, buildings, PDU zones, road network, traffic signals, and bus stops. Than bus lines, bus connections, individuals, travel plans are created based on data files in "*/includes/csv/*".
 
 ### Input data
 #### Data overview
