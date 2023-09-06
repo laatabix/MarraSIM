@@ -12,6 +12,9 @@ import "RoadSegment.gaml"
 global {
 	int TRAFFIC_STOP_SIGN <- 0;
 	int TRAFFIC_LIGHT <- 3;
+	
+	// time to stop at a stop sign or on red traffic light
+	float TS_STOP_WAIT_TIME <- 30#second;
 }
 
 species TrafficSignal schedules: [] {

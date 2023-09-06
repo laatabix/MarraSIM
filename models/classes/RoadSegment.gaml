@@ -17,6 +17,9 @@ global {
 	int G_TRAFF_LEVEL_DARKRED <- 4;
 	list<rgb> G_TRAFF_COLORS <- [#transparent, #green, #orange, #red, #darkred]; // index 0 is unused
 	
+	// use or not congestion from Google Traffic
+	bool traffic_on <- true;
+	
 	// the road network of the city and its suburbs
 	graph road_network;
 }

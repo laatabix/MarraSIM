@@ -9,6 +9,11 @@ model Individual
 
 import "PDUZone.gaml"
 
+global {
+	// time to wait for 1L-trips before taking a 2L-trip when transfer is off
+	int IND_WAITING_TIME_FOR_1L_TRIPS <- int(1#hour);
+}
+
 species Individual parallel: true {
 	int ind_id;
 	PDUZone ind_origin_zone;

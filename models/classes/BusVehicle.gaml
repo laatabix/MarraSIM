@@ -92,14 +92,23 @@ species BusVehicle skills: [moving] {
 						where (each.bt_bus_lines[0] = bv_line and each.bt_bus_directions[0] = bv_direction))))
 					+
 						(waiting_inds where (each.ind_current_plan_index = 1 and !empty(each.ind_bt_plan where
-					(each.bt_type= BUS_TRIP_TWO_LINE and each.bt_bus_lines[1] = bv_line and each.bt_bus_directions[1] = bv_direction))));
+					(each.bt_bus_lines[1] = bv_line and each.bt_bus_directions[1] = bv_direction and each.bt_type= BUS_TRIP_TWO_LINE))));
+				
+				// if transfer is on, remove individuals with 2L-trip that can still wait for a 1L-trip
+				if transfer_on {
+					waiting_inds <- waiting_inds - (waiting_inds where (each.ind_current_plan_index = 0 and
+						!empty(each.ind_bt_plan where (each.bt_bus_lines[0] = bv_line and each.bt_bus_directions[0] = bv_direction
+						and each.bt_type= BUS_TRIP_ONE_LINE)) and int(time - each.ind_waiting_time) < IND_WAITING_TIME_FOR_1L_TRIPS));
+				}
 				
 				nn <- 0;				
 				ask n_individs among waiting_inds {
+					// the individual was waiting for a first ride
 					if ind_current_plan_index = 0 {
 						ind_actual_bt <- ind_bt_plan first_with (each.bt_bus_lines[0] = myself.bv_line
 										and each.bt_bus_directions[0] = myself.bv_direction);	
 					} else {
+						// the individual is making a second ride
 						ind_actual_bt <- ind_bt_plan where (each.bt_type= BUS_TRIP_TWO_LINE) first_with 
 							(each.bt_bus_lines[1] = myself.bv_line and
 							each.bt_bus_directions[1] = myself.bv_direction);	
@@ -147,7 +156,7 @@ species BusVehicle skills: [moving] {
 					float stop_prob <- ts.ts_type = TRAFFIC_STOP_SIGN ? 1 : 0.5;
 					// if th stopping condition is true (flip) and the bus is 10 meters around a traffic signal
 					if flip (stop_prob) and 10#meter around (ts) overlaps location {
-						bv_stop_wait_time <- 30#second;
+						bv_stop_wait_time <- TS_STOP_WAIT_TIME;
 						bv_current_traff_sign <- ts;
 					 	bv_in_move <- false;
 					 	return;
@@ -159,9 +168,14 @@ species BusVehicle skills: [moving] {
 		}
 		if bv_current_rd_segment != nil {
 			bv_in_city <- bv_current_rd_segment.rs_in_city;
-			// a bus moves with 50 km/h inside Marrakesh, and 70 km/h outside;
+			// a bus moves with the commercial speed inside Marrakesh, and 50 km/h outside;
 			if bv_in_city {
-				bv_speed <- bv_com_speed / bv_current_rd_segment.rs_traffic_level;	
+				if traffic_on {
+					bv_speed <- bv_com_speed / bv_current_rd_segment.rs_traffic_level;
+	
+				} else {
+					bv_speed <- bv_com_speed;
+				}
 			} else {
 				bv_speed <- 50 #km/#hour;
 			}	

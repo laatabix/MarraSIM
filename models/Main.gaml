@@ -33,13 +33,19 @@ global {
 	float step <- 1#minute;
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
-	// simulation parameters
-	bool traffic_on <- true; // include congestion from Google Traffic
-	bool transfer_on <- false; // allow ticket transfer between busses of the same trip
+	// simulation parameters 
 	bool save_data_on <- false; // whether to save simulation data (to /results) or not
 		
 	init {
-		write "--+-- START OF INIT --+--" color:#green;	
+		write "--+-- START OF INIT --+--" color:#green;
+		
+		if !save_data_on { // warn when save data is off
+			bool data_off_ok <- user_confirm("Confirm","Data saving is off. Do you want to proceed ?");
+			if !data_off_ok {
+				do die;
+			}
+		}
+		
 		// create the environment: city, districts, roads, traffic signals
 		write "Creating the city environment ...";
 		create District from: marrakesh_districts;
@@ -288,6 +294,8 @@ experiment MarraSIM type: gui {
 	parameter "Show Bus Lines" category:"Visualization" var: show_buslines;
 	
 	parameter "Use Google Traffic" category:"Traffic" var: traffic_on;
+	
+	parameter "Free Transfer" category:"Bus network" var: transfer_on;
 	
 	init {
 		minimum_cycle_duration <- 0.05;

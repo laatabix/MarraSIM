@@ -12,6 +12,8 @@ import "BusLine.gaml"
 global {
 	int BUS_TRIP_ONE_LINE <- 1;
 	int BUS_TRIP_TWO_LINE <- 2;
+	
+	bool transfer_on <- false; // allow ticket transfer between busses of the same trip (when false, promotes 1L-trips over 2L-trips) 
 }
 	
 species BusTrip schedules: [] {
