@@ -31,7 +31,7 @@ species PDUZone schedules: [] parallel: true {
 		draw shape color: wt_col border: #black;
 	}
 	
-	action update_color {
+	list<int> update_color {
 		int wp <- BusStop where (each.bs_zone = self) sum_of(length(each.bs_waiting_people));
 		wp_col <- wp < PDUZ_WP_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wp < PDUZ_WP_THRESHOLDS[1] ? PDUZ_COLORS[1] :
 			(wp < PDUZ_WP_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wp < PDUZ_WP_THRESHOLDS[3] ? PDUZ_COLORS[3] : 
@@ -41,5 +41,7 @@ species PDUZone schedules: [] parallel: true {
 		wt_col <- wt < PDUZ_WT_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wt < PDUZ_WT_THRESHOLDS[1] ? PDUZ_COLORS[1] :
 			(wt < PDUZ_WT_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wt < PDUZ_WT_THRESHOLDS[3] ? PDUZ_COLORS[3] :
 				(wt < PDUZ_WT_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wt < PDUZ_WT_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
+
+		return [wp,wt];
 	}
 }

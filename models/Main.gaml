@@ -35,7 +35,16 @@ global {
 	
 	// simulation parameters 
 	bool save_data_on <- false; // whether to save simulation data (to /results) or not
-		
+	float sim_id;
+	
+	// stats
+	int waiting_people_at_bss <- 0 update: BusStop sum_of(length(each.bs_waiting_people));
+	int passengers_on_board <- 0 update: BusVehicle sum_of(length(each.bv_passengers));
+	int arrived_people_to_dest <- 0 update: BusStop sum_of(length(each.bs_arrived_people));
+	
+	int finished_1L_trips <- 0 update: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_ONE_LINE));
+	int finished_2L_trips <- 0 update: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_TWO_LINE));
+	
 	init {
 		write "--+-- START OF INIT --+--" color:#green;
 		
@@ -44,6 +53,8 @@ global {
 			if !data_off_ok {
 				do die;
 			}
+		} else {
+			sim_id <- machine_time;
 		}
 		
 		// create the environment: city, districts, roads, traffic signals
@@ -233,7 +244,7 @@ global {
 	/*******************************************************************************************************************************/
 	
 	// update road traffic and/or generate travellers each X minutes
-	int Nminutes <- 10; // Nminutes has to be a divider of 1hour
+	int Nminutes <- 10; // Nminutes has to be a divider of 1hour to allow updating traffic levels (done by hour)
 	reflex going_on when: int(time) mod int(Nminutes#minute) = 0 {
 		
 		int tt <- int(sim_start_hour) + int(time);
@@ -280,10 +291,23 @@ global {
 		// update colors of zones
 		write "Updating the colors of PDU zones ..";
 		ask PDUZone {
-			do update_color;
+			list<int> indicators <- update_color();
+			if save_data_on {
+				save ""+ zone_id + ',' + indicators[0] + ',' + indicators[1]
+											format: "csv" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
+			}
+		}
+		if save_data_on {
+			save "" + waiting_people_at_bss + ',' + passengers_on_board + ',' + arrived_people_to_dest
+					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/individuals.csv";
+			
+			save ""
+					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/busses.csv";
+			
+			save ""
+					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
 		}
 	}
-	
 	
 	/*******************************************************************************************************************************/
 	/*******************************************************************************************************************************/
@@ -357,16 +381,14 @@ experiment MarraSIM type: gui {
 		display Mobility type: java2D background: #whitesmoke {
 			chart "Travellers" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0} x_label: "Time" {
-				data "Waiting" color: #red value: BusStop sum_of(length(each.bs_waiting_people)) marker_shape: marker_empty;
-				data "On bus" color: #green value: BusVehicle sum_of(length(each.bv_passengers)) marker_shape: marker_empty;
-				data "Arrived" color: #blue value: BusStop sum_of(length(each.bs_arrived_people)) marker_shape: marker_empty;
+				data "Waiting" color: #red value: waiting_people_at_bss marker_shape: marker_empty;
+				data "On bus" color: #green value: passengers_on_board marker_shape: marker_empty;
+				data "Arrived" color: #blue value: arrived_people_to_dest marker_shape: marker_empty;
 			}
 			chart "Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0.5} x_label: "Time" {
-				data "1-Line" color: #darkgreen value: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_ONE_LINE))
-								marker_shape: marker_empty;
-				data "2-Lines" color: #darkred value: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_TWO_LINE))
-							marker_shape: marker_empty;
+				data "1-Line" color: #darkgreen value: finished_1L_trips marker_shape: marker_empty;
+				data "2-Lines" color: #darkred value: finished_2L_trips	marker_shape: marker_empty;
 			}
 		}
 	}
