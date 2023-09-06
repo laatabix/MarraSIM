@@ -56,6 +56,12 @@ global {
 			}
 		} else {
 			sim_id <- machine_time;
+			save "cycle,pduzone,w_people,w_time" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/pduzones.csv";
+			save "cycle,waiting1st,waiting2nd,onboard,arrived" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/individuals.csv";
+			save "cycle,bl,outs,rets,outs_board,rets_board,outs_traff,rets_traff,outs_sign,rets_sign,outs_psg,rets_psg"
+					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/busses.csv";
+			save "cycle,ind,origin,destin,bttype,idx,bl,dir,dist,walk"
+					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/bustrips.csv";	
 		}
 		
 		// create the environment: city, districts, roads, traffic signals
@@ -295,7 +301,7 @@ global {
 			list<int> indicators <- update_color();
 			if save_data_on {
 				save '' + cycle + ',' + zone_id + ',' + indicators[0] + ',' + indicators[1]
-											format: "csv" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
+											format: "text" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
 			}
 		}
 		
@@ -303,32 +309,33 @@ global {
 		if save_data_on {
 			save '' + cycle + ',' + waiting_people_for_1st + ',' + waiting_people_for_2nd + ',' +
 				passengers_on_board + ',' + arrived_people_to_dest
-					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/individuals.csv";
-			
+					format: "text" rewrite: false to: "../results/data_"+sim_id+"/individuals.csv";
+						
 			ask BusLine {
 				list<BusVehicle> bvs <- BusVehicle where (each.bv_line = self);
 				list<BusVehicle> outs <- bvs where (each.bv_direction = BUS_DIRECTION_OUTGOING);
 				list<BusVehicle> rets <- bvs where (each.bv_direction = BUS_DIRECTION_RETURN);
 				
-				save '' + cycle + ',' + bl_name + ',' + length(bvs) + ',' + length(outs) + ',' + length(rets) + ',' +
+				save '' + cycle + ',' + bl_name + ',' + length(outs) + ',' + length(rets) + ',' +
 					outs sum_of length(each.bv_passengers) + ',' + rets sum_of length(each.bv_passengers) + ',' +
-					outs sum_of (each.bv_accumulated_traffic_delay) + ',' + rets sum_of (each.bv_accumulated_signs_delay) + ',' +
+					outs sum_of (each.bv_accumulated_traffic_delay) + ',' + rets sum_of (each.bv_accumulated_traffic_delay) + ',' +
+					outs sum_of (each.bv_accumulated_signs_delay) + ',' + rets sum_of (each.bv_accumulated_signs_delay) + ',' +
 					outs sum_of (each.bv_accumulated_passaging_delay) + ',' + rets sum_of (each.bv_accumulated_passaging_delay)
-						format: "csv" rewrite: false to: "../results/data_"+sim_id+"/busses.csv";	
+						format: "text" rewrite: false to: "../results/data_"+sim_id+"/busses.csv";
 			}
 			
 			ask unsaved_arrivals {
 				save '' + cycle + ',' + ind_id + ',' + ind_origin_zone.zone_id + ',' + ind_destin_zone.zone_id + ',' + 
 					ind_used_bts[0].bt_type + ',' + 0 + ',' + ind_used_bts[0].bt_bus_lines[0].bl_name + ',' +
 					ind_used_bts[0].bt_bus_directions[0] + ',' + ind_used_bts[0].bt_bus_dists[0] + ',' + ind_used_bts[0].bt_walk_dist
-							format: "csv" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
+							format: "text" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
 				if length(ind_used_bts) = 2 {
 					save '' + cycle + ',' + ind_id + ',' + ind_used_bts[1].bt_start_bs.bs_zone.zone_id + ',' + 
 							last(ind_used_bts[1].bt_bus_stops).bs_zone.zone_id+ ',' +
 					ind_used_bts[1].bt_type + ',' + 1 + ',' + last(ind_used_bts[1].bt_bus_lines).bl_name + ',' +
 					last(ind_used_bts[1].bt_bus_directions) + ',' + last(ind_used_bts[1].bt_bus_dists) + ',' + ind_used_bts[1].bt_walk_dist
-							format: "csv" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
-				}	
+							format: "text" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
+				}
 			}
 			unsaved_arrivals <- [];
 		}
@@ -351,7 +358,8 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-				
+		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
+		
 		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
@@ -367,8 +375,6 @@ experiment MarraSIM type: gui {
 			species TrafficSignal refresh: false;
 			species BusVehicle;
 		}
-		
-		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
 		
 		display "Waiting People" type: opengl background: #whitesmoke{
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
@@ -413,8 +419,8 @@ experiment MarraSIM type: gui {
 			}
 			chart "Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0.5} x_label: "Time" {
-				data "1-Line" color: #darkkhaki value: finished_1L_trips marker_shape: marker_empty;
-				data "2-Lines" color: #darksalmon value: finished_2L_trips	marker_shape: marker_empty;
+				data "1-Line" color: #darkgreen value: finished_1L_trips marker_shape: marker_empty;
+				data "2-Lines" color: #gamablue value: finished_2L_trips marker_shape: marker_empty;
 			}
 		}
 	}
