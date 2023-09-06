@@ -34,16 +34,17 @@ global {
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
 	// simulation parameters 
-	bool save_data_on <- false; // whether to save simulation data (to /results) or not
+	bool save_data_on <- true; // whether to save simulation data (to /results) or not
 	float sim_id;
 	
 	// stats
-	int waiting_people_at_bss <- 0 update: BusStop sum_of(length(each.bs_waiting_people));
+	int waiting_people_for_1st <- 0 update: BusStop sum_of(length(each.bs_waiting_people where (each.ind_current_plan_index=0)));
+	int waiting_people_for_2nd <- 0 update: BusStop sum_of(length(each.bs_waiting_people where (each.ind_current_plan_index=1)));
 	int passengers_on_board <- 0 update: BusVehicle sum_of(length(each.bv_passengers));
 	int arrived_people_to_dest <- 0 update: BusStop sum_of(length(each.bs_arrived_people));
 	
-	int finished_1L_trips <- 0 update: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_ONE_LINE));
-	int finished_2L_trips <- 0 update: Individual sum_of length(each.ind_finished_bt where (each.bt_type = BUS_TRIP_TWO_LINE));
+	int finished_1L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_ONE_LINE));
+	int finished_2L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_TWO_LINE));
 	
 	init {
 		write "--+-- START OF INIT --+--" color:#green;
@@ -196,7 +197,7 @@ global {
 		
 		// create the population of moving individuals between PUDZones
 		write "Creating population ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/populations.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/populations_1000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
@@ -208,7 +209,7 @@ global {
 		}
 		
 		write "Creating travel plans ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/travel_plans.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/travel_plans_1000.csv",true));
 		int id_0 <- -1;
 		int id_x;
 		Individual indiv_x;
@@ -293,19 +294,43 @@ global {
 		ask PDUZone {
 			list<int> indicators <- update_color();
 			if save_data_on {
-				save ""+ zone_id + ',' + indicators[0] + ',' + indicators[1]
+				save '' + cycle + ',' + zone_id + ',' + indicators[0] + ',' + indicators[1]
 											format: "csv" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
 			}
 		}
+		
+		// save data if it is on
 		if save_data_on {
-			save "" + waiting_people_at_bss + ',' + passengers_on_board + ',' + arrived_people_to_dest
+			save '' + cycle + ',' + waiting_people_for_1st + ',' + waiting_people_for_2nd + ',' +
+				passengers_on_board + ',' + arrived_people_to_dest
 					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/individuals.csv";
 			
-			save ""
-					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/busses.csv";
+			ask BusLine {
+				list<BusVehicle> bvs <- BusVehicle where (each.bv_line = self);
+				list<BusVehicle> outs <- bvs where (each.bv_direction = BUS_DIRECTION_OUTGOING);
+				list<BusVehicle> rets <- bvs where (each.bv_direction = BUS_DIRECTION_RETURN);
+				
+				save '' + cycle + ',' + bl_name + ',' + length(bvs) + ',' + length(outs) + ',' + length(rets) + ',' +
+					outs sum_of length(each.bv_passengers) + ',' + rets sum_of length(each.bv_passengers) + ',' +
+					outs sum_of (each.bv_accumulated_traffic_delay) + ',' + rets sum_of (each.bv_accumulated_signs_delay) + ',' +
+					outs sum_of (each.bv_accumulated_passaging_delay) + ',' + rets sum_of (each.bv_accumulated_passaging_delay)
+						format: "csv" rewrite: false to: "../results/data_"+sim_id+"/busses.csv";	
+			}
 			
-			save ""
-					format: "csv" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
+			ask unsaved_arrivals {
+				save '' + cycle + ',' + ind_id + ',' + ind_origin_zone.zone_id + ',' + ind_destin_zone.zone_id + ',' + 
+					ind_used_bts[0].bt_type + ',' + 0 + ',' + ind_used_bts[0].bt_bus_lines[0].bl_name + ',' +
+					ind_used_bts[0].bt_bus_directions[0] + ',' + ind_used_bts[0].bt_bus_dists[0] + ',' + ind_used_bts[0].bt_walk_dist
+							format: "csv" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
+				if length(ind_used_bts) = 2 {
+					save '' + cycle + ',' + ind_id + ',' + ind_used_bts[1].bt_start_bs.bs_zone.zone_id + ',' + 
+							last(ind_used_bts[1].bt_bus_stops).bs_zone.zone_id+ ',' +
+					ind_used_bts[1].bt_type + ',' + 1 + ',' + last(ind_used_bts[1].bt_bus_lines).bl_name + ',' +
+					last(ind_used_bts[1].bt_bus_directions) + ',' + last(ind_used_bts[1].bt_bus_dists) + ',' + ind_used_bts[1].bt_walk_dist
+							format: "csv" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
+				}	
+			}
+			unsaved_arrivals <- [];
 		}
 	}
 	
@@ -381,14 +406,15 @@ experiment MarraSIM type: gui {
 		display Mobility type: java2D background: #whitesmoke {
 			chart "Travellers" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0} x_label: "Time" {
-				data "Waiting" color: #red value: waiting_people_at_bss marker_shape: marker_empty;
+				data "Waiting 1st" color: #red value: waiting_people_for_1st marker_shape: marker_empty;
+				data "Waiting 2nd" color: #darkred value: waiting_people_for_2nd marker_shape: marker_empty;
 				data "On bus" color: #green value: passengers_on_board marker_shape: marker_empty;
 				data "Arrived" color: #blue value: arrived_people_to_dest marker_shape: marker_empty;
 			}
 			chart "Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {1,0.5} position: {0,0.5} x_label: "Time" {
-				data "1-Line" color: #darkgreen value: finished_1L_trips marker_shape: marker_empty;
-				data "2-Lines" color: #darkred value: finished_2L_trips	marker_shape: marker_empty;
+				data "1-Line" color: #darkkhaki value: finished_1L_trips marker_shape: marker_empty;
+				data "2-Lines" color: #darksalmon value: finished_2L_trips	marker_shape: marker_empty;
 			}
 		}
 	}

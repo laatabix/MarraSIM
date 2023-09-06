@@ -12,6 +12,8 @@ import "PDUZone.gaml"
 global {
 	// time to wait for 1L-trips before taking a 2L-trip when transfer is off
 	int IND_WAITING_TIME_FOR_1L_TRIPS <- int(1#hour);
+	
+	list<Individual> unsaved_arrivals <- [];
 }
 
 species Individual parallel: true {
@@ -28,7 +30,7 @@ species Individual parallel: true {
 	int ind_trip_time <- 0;
 	BusTrip ind_actual_bt <- nil;
 	int ind_current_plan_index <- 0;
-	list<BusTrip> ind_finished_bt <- [];
+	list<BusTrip> ind_used_bts <- [];
 	
 	BusStop tmp_start_bs;
 	BusLine tmp_bl;

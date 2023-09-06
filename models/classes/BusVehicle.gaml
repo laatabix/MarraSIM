@@ -27,6 +27,10 @@ species BusVehicle skills: [moving] {
 	RoadSegment bv_current_rd_segment <- nil;
 	list<Individual> bv_passengers <- [];
 	
+	float bv_accumulated_traffic_delay <- 0.0;
+	float bv_accumulated_signs_delay <- 0.0;
+	float bv_accumulated_passaging_delay <- 0.0;
+	
 	reflex drive {
 		// if the bus has to wait
 		if bv_stop_wait_time > 0 {
@@ -52,14 +56,16 @@ species BusVehicle skills: [moving] {
 				// drop off all passengers who have arrived to their destination
 				int nn <- 0; int mm <- 0;
 				ask bv_passengers where (bv_current_bs = each.ind_actual_bt.bt_bus_stops[each.ind_current_plan_index]) {
+					// add the actual BusTrip to the list of used bus trips
+					ind_used_bts <+ ind_actual_bt;
 					
 					if myself.bv_current_bs = last(ind_actual_bt.bt_bus_stops) { // arrived
 						myself.bv_current_bs.bs_arrived_people <+ self;
 						ind_trip_time <- int(time - ind_trip_time);
 						ind_arrived <- true;
 						ind_moving <- false;
-						ind_finished_bt <+ ind_actual_bt;
 						nn <- nn + 1;
+						unsaved_arrivals <+ self;
 					} 
 					else { // connection
 						if myself.bv_current_bs != ind_actual_bt.bt_bus_stops[0] {
@@ -73,6 +79,7 @@ species BusVehicle skills: [moving] {
 					}
 					myself.bv_passengers >- self;					
 					myself.bv_stop_wait_time <- myself.bv_stop_wait_time + 5#second;
+					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + #second;
 				}
 				if nn > 0 {
 					write world.formatted_time() + bv_line.bl_name  + ' (' + bv_direction + ') is dropping ' + (nn + mm) + ' people at ' + bv_current_bs.bs_name color: #blue;
@@ -92,7 +99,7 @@ species BusVehicle skills: [moving] {
 						where (each.bt_bus_lines[0] = bv_line and each.bt_bus_directions[0] = bv_direction))))
 					+
 						(waiting_inds where (each.ind_current_plan_index = 1 and !empty(each.ind_bt_plan where
-					(each.bt_bus_lines[1] = bv_line and each.bt_bus_directions[1] = bv_direction and each.bt_type= BUS_TRIP_TWO_LINE))));
+					(each.bt_type= BUS_TRIP_TWO_LINE and each.bt_bus_lines[1] = bv_line and each.bt_bus_directions[1] = bv_direction))));
 				
 				// if transfer is on, remove individuals with 2L-trip that can still wait for a 1L-trip
 				if transfer_on {
@@ -121,6 +128,7 @@ species BusVehicle skills: [moving] {
 						ind_waiting_time <- int(time - ind_waiting_time);
 						ind_trip_time <- int(time);
 						myself.bv_stop_wait_time <- myself.bv_stop_wait_time + 5#second;
+						myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + #second;
 					} else {
 						write "ERROR in finding bus trip !" color: #red;
 					}
@@ -157,6 +165,7 @@ species BusVehicle skills: [moving] {
 					// if th stopping condition is true (flip) and the bus is 10 meters around a traffic signal
 					if flip (stop_prob) and 10#meter around (ts) overlaps location {
 						bv_stop_wait_time <- TS_STOP_WAIT_TIME;
+						bv_accumulated_signs_delay <- bv_accumulated_signs_delay + TS_STOP_WAIT_TIME;
 						bv_current_traff_sign <- ts;
 					 	bv_in_move <- false;
 					 	return;
@@ -172,6 +181,7 @@ species BusVehicle skills: [moving] {
 			if bv_in_city {
 				if traffic_on {
 					bv_speed <- bv_com_speed / bv_current_rd_segment.rs_traffic_level;
+					bv_accumulated_traffic_delay <- bv_accumulated_traffic_delay + bv_current_rd_segment.rs_traffic_level;
 	
 				} else {
 					bv_speed <- bv_com_speed;
