@@ -34,7 +34,7 @@ global {
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
 	// simulation parameters 
-	bool save_data_on <- true; // whether to save simulation data (to /results) or not
+	bool save_data_on <- false; // whether to save simulation data (to /results) or not
 	float sim_id;
 	
 	// stats
@@ -358,7 +358,7 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-		layout #split toolbars: false tabs: false editors: false navigator: false parameters: false tray: false;// consoles: false;
+		//layout #split toolbars: false tabs: false editors: false navigator: false parameters: true tray: false consoles: true;
 		
 		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
