@@ -11,6 +11,10 @@ import "TrafficSignal.gaml"
 import "Individual.gaml"
 import "BusTrip.gaml"
 
+global {
+	float BV_SUBURBAN_SPEED <- 50#km/#hour;
+}
+
 species BusVehicle skills: [moving] {
 	BusLine bv_line;
 	int bv_direction;
@@ -20,7 +24,6 @@ species BusVehicle skills: [moving] {
 	float bv_stop_wait_time <- -1.0;
 	bool bv_in_city <- true;
 	int bv_max_capacity <- 100;
-	float bv_com_speed <- 30 #km/#hour;
 	bool bv_in_move <- false;
 	geometry shape <- rectangle(50#meter,25#meter);
 	TrafficSignal bv_current_traff_sign <- nil;
@@ -74,12 +77,13 @@ species BusVehicle skills: [moving] {
 							ind_waiting_bs <- myself.bv_current_bs;
 							ind_waiting_bs.bs_waiting_people <+ self;
 							ind_current_plan_index <- ind_current_plan_index + 1;
+							ind_waiting_times[ind_current_plan_index] <- int(time);
 							mm <- mm + 1;
 						}
 					}
 					myself.bv_passengers >- self;					
 					myself.bv_stop_wait_time <- myself.bv_stop_wait_time + 5#second;
-					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + #second;
+					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + 5#second;
 				}
 				if nn > 0 {
 					write world.formatted_time() + bv_line.bl_name  + ' (' + bv_direction + ') is dropping ' + (nn + mm) + ' people at ' + bv_current_bs.bs_name color: #blue;
@@ -100,37 +104,56 @@ species BusVehicle skills: [moving] {
 					+
 						(waiting_inds where (each.ind_current_plan_index = 1 and !empty(each.ind_bt_plan where
 					(each.bt_type= BUS_TRIP_TWO_LINE and each.bt_bus_lines[1] = bv_line and each.bt_bus_directions[1] = bv_direction))));
-				
-				// if transfer is on, remove individuals with 2L-trip that can still wait for a 1L-trip
-				if transfer_on {
-					waiting_inds <- waiting_inds - (waiting_inds where (each.ind_current_plan_index = 0 and
-						!empty(each.ind_bt_plan where (each.bt_bus_lines[0] = bv_line and each.bt_bus_directions[0] = bv_direction
-						and each.bt_type= BUS_TRIP_ONE_LINE)) and int(time - each.ind_waiting_time) < IND_WAITING_TIME_FOR_1L_TRIPS));
-				}
-				
-				nn <- 0;				
-				ask n_individs among waiting_inds {
-					// the individual was waiting for a first ride
-					if ind_current_plan_index = 0 {
-						ind_actual_bt <- ind_bt_plan first_with (each.bt_bus_lines[0] = myself.bv_line
-										and each.bt_bus_directions[0] = myself.bv_direction);	
-					} else {
-						// the individual is making a second ride
-						ind_actual_bt <- ind_bt_plan where (each.bt_type= BUS_TRIP_TWO_LINE) first_with 
-							(each.bt_bus_lines[1] = myself.bv_line and
-							each.bt_bus_directions[1] = myself.bv_direction);	
+			
+				if !empty (waiting_inds) {
+					// if transfer is off, remove individuals with 2L-trip that can still wait for a 1L-trip
+					if !transfer_on {
+						// individuals with no 1L trip on this bus
+						list<Individual> indivs <- (waiting_inds where (each.ind_current_plan_index = 0 and
+							empty(each.ind_bt_plan where (each.bt_bus_lines[0] = bv_line and each.bt_bus_directions[0] = bv_direction
+							and each.bt_type = BUS_TRIP_ONE_LINE))));
+						
+						if !empty(indivs) {
+							// individuals with 1L trip on other busses and who can still wait for 1L trip
+							indivs <- (indivs where (int(time - each.ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS and
+								!empty(each.ind_bt_plan where (each.bt_bus_lines[0] != bv_line and each.bt_type= BUS_TRIP_ONE_LINE))));
+							waiting_inds <- waiting_inds - indivs;
+						}
 					}
-					if ind_actual_bt !=nil {
-						nn <- nn + 1;
-						myself.bv_passengers <+ self;
-						ind_waiting_bs.bs_waiting_people >- self;
-						ind_waiting_bs <- nil;
-						ind_waiting_time <- int(time - ind_waiting_time);
-						ind_trip_time <- int(time);
-						myself.bv_stop_wait_time <- myself.bv_stop_wait_time + 5#second;
-						myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + #second;
-					} else {
-						write "ERROR in finding bus trip !" color: #red;
+					
+					nn <- 0;				
+					ask n_individs among waiting_inds {
+						// the individual was waiting for a first ride
+						if ind_current_plan_index = 0 {
+							// prefer 1L trips
+							if !transfer_on and int(time - ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS {
+								ind_actual_bt <- ind_bt_plan first_with (each.bt_bus_lines[0] = myself.bv_line
+									and each.bt_bus_directions[0] = myself.bv_direction and each.bt_type = BUS_TRIP_ONE_LINE);
+							}
+							if ind_actual_bt = nil {
+								ind_actual_bt <- ind_bt_plan first_with (each.bt_bus_lines[0] = myself.bv_line
+											and each.bt_bus_directions[0] = myself.bv_direction);	
+							}	
+						} else {
+							// the individual is making a second ride
+							ind_actual_bt <- ind_bt_plan where (each.bt_type= BUS_TRIP_TWO_LINE) first_with 
+								(each.bt_bus_lines[1] = myself.bv_line and
+								each.bt_bus_directions[1] = myself.bv_direction);	
+						}
+						if ind_actual_bt !=nil {
+							nn <- nn + 1;
+							myself.bv_passengers <+ self;
+							ind_waiting_bs.bs_waiting_people >- self;
+							ind_waiting_bs <- nil;
+							ind_waiting_times[ind_current_plan_index] <- int(time - ind_waiting_times[ind_current_plan_index]);
+							if ind_current_plan_index = 0 {
+								ind_trip_time <- int(time);	
+							}
+							myself.bv_stop_wait_time <- myself.bv_stop_wait_time + 5#second;
+							myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + 5#second;
+						} else {
+							write "ERROR in finding bus trip !" color: #red;
+						}	
 					}
 				}
 				if nn > 0 {
@@ -177,17 +200,18 @@ species BusVehicle skills: [moving] {
 		}
 		if bv_current_rd_segment != nil {
 			bv_in_city <- bv_current_rd_segment.rs_in_city;
-			// a bus moves with the commercial speed inside Marrakesh, and 50 km/h outside;
+			// a bus moves with the commercial speed inside Marrakesh, and BV_SUBURBAN_SPEED outside;
 			if bv_in_city {
 				if traffic_on {
-					bv_speed <- bv_com_speed / bv_current_rd_segment.rs_traffic_level;
-					bv_accumulated_traffic_delay <- bv_accumulated_traffic_delay + bv_current_rd_segment.rs_traffic_level;
+					bv_speed <- bv_line.bl_com_speed / bv_current_rd_segment.rs_traffic_level;
+					bv_accumulated_traffic_delay <- bv_accumulated_traffic_delay + 
+								(((bv_line.bl_com_speed - bv_speed)/bv_line.bl_com_speed)*step);
 	
 				} else {
-					bv_speed <- bv_com_speed;
+					bv_speed <- bv_line.bl_com_speed;
 				}
 			} else {
-				bv_speed <- 50 #km/#hour;
+				bv_speed <- BV_SUBURBAN_SPEED;
 			}	
 		}
 		do goto on: road_network target: bv_next_stop speed: bv_speed;

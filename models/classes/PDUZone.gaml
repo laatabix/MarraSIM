@@ -11,8 +11,8 @@ import "BusStop.gaml"
 
 global {
 	list<rgb> PDUZ_COLORS <- [#white,#yellow,#orange,#tomato,#red,#darkred,#black];
-	list<int> PDUZ_WP_THRESHOLDS <- [10,50,100,200,400,750];
-	list<float> PDUZ_WT_THRESHOLDS <- [5#mn,10#mn,15#mn,20#mn,25#mn,30#mn];
+	list<int> PDUZ_WP_THRESHOLDS <- [2,5,10,20,30,50];//[25,50,100,200,400,750]; // TODO reset to commented values
+	list<float> PDUZ_WT_THRESHOLDS <- [15#mn,30#mn,45#mn,60#mn,90#mn,120#mn];
 }
 
 species PDUZone schedules: [] parallel: true {
@@ -37,7 +37,7 @@ species PDUZone schedules: [] parallel: true {
 			(wp < PDUZ_WP_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wp < PDUZ_WP_THRESHOLDS[3] ? PDUZ_COLORS[3] : 
 				(wp < PDUZ_WP_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wp < PDUZ_WP_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
 		
-		int wt <- int(mean(BusStop where (each.bs_zone = self) accumulate (each.bs_waiting_people accumulate each.ind_waiting_time)));
+		int wt <- int(mean(BusStop where (each.bs_zone = self) accumulate (each.bs_waiting_people collect sum(each.ind_waiting_times))));
 		wt_col <- wt < PDUZ_WT_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wt < PDUZ_WT_THRESHOLDS[1] ? PDUZ_COLORS[1] :
 			(wt < PDUZ_WT_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wt < PDUZ_WT_THRESHOLDS[3] ? PDUZ_COLORS[3] :
 				(wt < PDUZ_WT_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wt < PDUZ_WT_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));

@@ -43,8 +43,16 @@ global {
 	int passengers_on_board <- 0 update: BusVehicle sum_of(length(each.bv_passengers));
 	int arrived_people_to_dest <- 0 update: BusStop sum_of(length(each.bs_arrived_people));
 	
-	int finished_1L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_ONE_LINE));
-	int finished_2L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_TWO_LINE));
+	//int finished_1L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_ONE_LINE));
+	//int finished_2L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_TWO_LINE));
+	int finished_1L_trips <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_used_bts) = 1));
+	int finished_2L_trips <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_used_bts) = 2));
+	
+	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 1) mean_of (each.ind_trip_time);
+	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 2) mean_of (each.ind_trip_time);
+	
+	float mean_waiting_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 1) mean_of (sum(each.ind_waiting_times));
+	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 2) mean_of (sum(each.ind_waiting_times));
 	
 	init {
 		write "--+-- START OF INIT --+--" color:#green;
@@ -58,8 +66,9 @@ global {
 			sim_id <- machine_time;
 			save "cycle,pduzone,w_people,w_time" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/pduzones.csv";
 			save "cycle,waiting1st,waiting2nd,onboard,arrived" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/individuals.csv";
+			save "cycle,tt1l,tt2l,wt1l,wt2l" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/times.csv";
 			save "cycle,bl,outs,rets,outs_board,rets_board,outs_traff,rets_traff,outs_sign,rets_sign,outs_psg,rets_psg"
-					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/busses.csv";
+					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/buslines.csv";
 			save "cycle,ind,origin,destin,bttype,idx,bl,dir,dist,walk"
 					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/bustrips.csv";	
 		}
@@ -178,7 +187,7 @@ global {
 			if dataMatrix index_of bl_name != nil {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
 				bl_interval_time_m <- int(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
-				bl_comm_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]);
+				bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
 			}
 			int i_counter <- 0;
 			create BusVehicle number: n_vehicles {
@@ -291,7 +300,7 @@ global {
 			ind_moving <- true;
 			ind_waiting_bs <- ind_origin_bs;
 			ind_waiting_bs.bs_waiting_people <+ self;
-			ind_waiting_time <- int(time);
+			ind_waiting_times[0] <- int(time);
 		}
 		write formatted_time()  + "Total people waiting at bus stops : " + length(Individual where (each.ind_moving)) color: #purple;
 		
@@ -310,6 +319,10 @@ global {
 			save '' + cycle + ',' + waiting_people_for_1st + ',' + waiting_people_for_2nd + ',' +
 				passengers_on_board + ',' + arrived_people_to_dest
 					format: "text" rewrite: false to: "../results/data_"+sim_id+"/individuals.csv";
+					
+			save '' + cycle + ',' + mean_travel_time_1L + ',' + mean_travel_time_2L + ',' + 
+					mean_waiting_time_1L + ',' + mean_waiting_time_2L
+					format: "text" rewrite: false to: "../results/data_"+sim_id+"/times.csv";
 						
 			ask BusLine {
 				list<BusVehicle> bvs <- BusVehicle where (each.bv_line = self);
@@ -321,7 +334,7 @@ global {
 					outs sum_of (each.bv_accumulated_traffic_delay) + ',' + rets sum_of (each.bv_accumulated_traffic_delay) + ',' +
 					outs sum_of (each.bv_accumulated_signs_delay) + ',' + rets sum_of (each.bv_accumulated_signs_delay) + ',' +
 					outs sum_of (each.bv_accumulated_passaging_delay) + ',' + rets sum_of (each.bv_accumulated_passaging_delay)
-						format: "text" rewrite: false to: "../results/data_"+sim_id+"/busses.csv";
+						format: "text" rewrite: false to: "../results/data_"+sim_id+"/buslines.csv";
 			}
 			
 			ask unsaved_arrivals {
@@ -410,17 +423,38 @@ experiment MarraSIM type: gui {
 		}
 		
 		display Mobility type: java2D background: #whitesmoke {
-			chart "Travellers" type: series y_tick_line_visible: true x_tick_line_visible: false
-				background: #whitesmoke color: #black size: {1,0.5} position: {0,0} x_label: "Time" {
-				data "Waiting 1st" color: #red value: waiting_people_for_1st marker_shape: marker_empty;
-				data "Waiting 2nd" color: #darkred value: waiting_people_for_2nd marker_shape: marker_empty;
+			chart "Number of Travellers" type: series y_tick_line_visible: true x_tick_line_visible: false
+				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0} x_label: "Time" {
+				data "1st wait" color: #red value: waiting_people_for_1st marker_shape: marker_empty;
+				data "Transfer wait" color: #darkred value: waiting_people_for_2nd marker_shape: marker_empty;
 				data "On bus" color: #green value: passengers_on_board marker_shape: marker_empty;
 				data "Arrived" color: #blue value: arrived_people_to_dest marker_shape: marker_empty;
 			}
-			chart "Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
-				background: #whitesmoke color: #black size: {1,0.5} position: {0,0.5} x_label: "Time" {
+			chart "Number of Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
+				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0} x_label: "Time" {
 				data "1-Line" color: #darkgreen value: finished_1L_trips marker_shape: marker_empty;
-				data "2-Lines" color: #gamablue value: finished_2L_trips marker_shape: marker_empty;
+				data "2-Lines" color: #darkred value: finished_2L_trips marker_shape: marker_empty;
+			}
+			chart "Mean Travel Time (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
+				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.34} x_label: "Time" {
+				data "1-L trips" color: #darkgreen value: mean_travel_time_1L/1#mn marker_shape: marker_empty;
+				data "2-L trips" color: #gamablue value: mean_travel_time_2L/1#mn marker_shape: marker_empty;
+			}
+			chart "Mean Waiting Time at Bus Stops (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
+				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.34} x_label: "Time" {
+				data "1-L trips" color: #darkgreen value: mean_waiting_time_1L/1#mn marker_shape: marker_empty;
+				data "2-L trips" color: #gamablue value: mean_waiting_time_2L/1#mn marker_shape: marker_empty;
+			}
+			chart "Accumulated Delay (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
+				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.67} x_label: "Time" {
+				data "Road traffic" color: #darkred value: BusVehicle sum_of(each.bv_accumulated_traffic_delay)/1#mn marker_shape: marker_empty;
+				data "Traffic signs" color: #darkblue value: BusVehicle sum_of(each.bv_accumulated_signs_delay)/1#mn marker_shape: marker_empty;
+				data "Passengers" color: #darkviolet value: BusVehicle sum_of(each.bv_accumulated_passaging_delay)/1#mn marker_shape: marker_empty;
+			}
+			chart "Mean of Bus Speed (km/h)" type: series y_tick_line_visible: true x_tick_line_visible: false
+				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.67} x_label: "Time" {
+				data "Theoretical commercial speed" color: #darkgreen value: BusVehicle mean_of(each.bv_line.bl_com_speed) marker_shape: marker_empty;
+				data "Actual simulation speed" color: #darkred value: BusVehicle mean_of(each.bv_speed) marker_shape: marker_empty;
 			}
 		}
 	}

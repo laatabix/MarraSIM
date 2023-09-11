@@ -22,7 +22,7 @@ global {
 species BusLine schedules: [] parallel: true {
 	string bl_name;
 	int bl_interval_time_m <- -1;
-	float bl_comm_speed <- 30 #km/#h;
+	float bl_com_speed <- 30 #km/#h;
 	list<BusStop> bl_outgoing_bs <- [];
 	list<int> bl_outgoing_dists <- [];
 	list<BusStop> bl_return_bs <- [];

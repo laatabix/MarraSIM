@@ -26,7 +26,7 @@ species Individual parallel: true {
 	list<BusTrip> ind_bt_plan <- [];
 	bool ind_moving <- false;
 	bool ind_arrived <- false;
-	int ind_waiting_time <- 0;
+	list<int> ind_waiting_times <- [0,0];
 	int ind_trip_time <- 0;
 	BusTrip ind_actual_bt <- nil;
 	int ind_current_plan_index <- 0;
