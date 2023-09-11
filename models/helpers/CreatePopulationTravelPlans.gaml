@@ -48,7 +48,7 @@ global {
 			}
 			BusStop current_bs <- BusStop first_with (each.bs_id = int(bustopsMatrix[3,i]));
 			if current_bs != nil {
-				if int(bustopsMatrix[1,i]) = BUS_DIRECTION_OUTGOING {
+				if int(bustopsMatrix[1,i]) = BL_DIRECTION_OUTGOING {
 					if length(current_bl.bl_outgoing_bs) != int(bustopsMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
@@ -83,7 +83,7 @@ global {
 		write "Computing BusStop neighbors ..";
 		ask BusStop {
 			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)); 
+			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
 		write "Creating bus connections ...";

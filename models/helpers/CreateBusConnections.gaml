@@ -39,7 +39,7 @@ global {
 			}
 			BusStop current_bs <- BusStop first_with (each.bs_id = int(bustopsMatrix[3,i]));
 			if current_bs != nil {
-				if int(bustopsMatrix[1,i]) = BUS_DIRECTION_OUTGOING {
+				if int(bustopsMatrix[1,i]) = BL_DIRECTION_OUTGOING {
 					if length(current_bl.bl_outgoing_bs) != int(bustopsMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
@@ -74,7 +74,7 @@ global {
 		write "Computing BusStop neighbors ..";
 		ask BusStop {
 			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)); 
+			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
 		// create bus connection for each bus line
@@ -83,7 +83,7 @@ global {
 			loop j from: i+1 to: length(BusLine) - 1 {
 				list<list<BusStop>> mybss <- [BusLine[i].bl_outgoing_bs,BusLine[i].bl_return_bs,
 												BusLine[j].bl_outgoing_bs,BusLine[j].bl_return_bs];
-				list<int> mydirs <- [BUS_DIRECTION_OUTGOING,BUS_DIRECTION_RETURN,BUS_DIRECTION_OUTGOING,BUS_DIRECTION_RETURN];								
+				list<int> mydirs <- [BL_DIRECTION_OUTGOING,BL_DIRECTION_RETURN,BL_DIRECTION_OUTGOING,BL_DIRECTION_RETURN];								
 				
 				loop lisa over: [[0,2],[0,3],[1,2],[1,3]] {
 					list<BusStop> inter_bss <- mybss[lisa[0]] where !empty(each.bs_neighbors inter mybss[lisa[1]]);		
@@ -98,8 +98,8 @@ global {
 							last_con_idx <- idx;
 						}
 						loop bs0 over: bs_connections {
-							if !((mydirs[lisa[0]] = BUS_DIRECTION_OUTGOING and bs0 = BusLine[i].bl_outgoing_bs[0]) or
-								(mydirs[lisa[0]] = BUS_DIRECTION_RETURN and bs0 = BusLine[i].bl_return_bs[0])) {
+							if !((mydirs[lisa[0]] = BL_DIRECTION_OUTGOING and bs0 = BusLine[i].bl_outgoing_bs[0]) or
+								(mydirs[lisa[0]] = BL_DIRECTION_RETURN and bs0 = BusLine[i].bl_return_bs[0])) {
 								ask BusLine[i] {
 									BusStop bs1 <- mybss[lisa[1]] contains bs0 ? bs0 : mybss[lisa[1]] closest_to bs0;
 									do create_bc(bs0, mydirs[lisa[0]], BusLine[j], bs1, mydirs[lisa[1]],-1);

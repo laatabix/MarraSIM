@@ -87,7 +87,7 @@ species Individual parallel: true {
 		int o_ix;	int	d_ix;
 		list<int> distances <- [];
 		
-		if dir = BUS_DIRECTION_OUTGOING {
+		if dir = BL_DIRECTION_OUTGOING {
 			o_ix <- bsl.bl_outgoing_bs index_of o_bst;
 			d_ix <- bsl.bl_outgoing_bs index_of d_bst;
 			distances <- bsl.bl_outgoing_dists;
@@ -115,7 +115,7 @@ species Individual parallel: true {
 		int o_ix;	int	d_ix;
 		list<int> distances <- [];
 		
-		if bc.bc_bus_directions[indx_bsl] = BUS_DIRECTION_OUTGOING {
+		if bc.bc_bus_directions[indx_bsl] = BL_DIRECTION_OUTGOING {
 			o_ix <- bsl.bl_outgoing_bs index_of o_bst;
 			d_ix <- bsl.bl_outgoing_bs index_of d_bst;
 			distances <- bsl.bl_outgoing_dists;

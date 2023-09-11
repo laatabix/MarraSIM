@@ -162,16 +162,16 @@ species BusVehicle skills: [moving] {
 				}
 			}
 			// to know the next stop
-			if bv_direction = BUS_DIRECTION_OUTGOING { // outgoing
+			if bv_direction = BL_DIRECTION_OUTGOING { // outgoing
 				if bv_current_bs = last(bv_line.bl_outgoing_bs) { // last stop
-					bv_direction <- BUS_DIRECTION_RETURN;
+					bv_direction <- BL_DIRECTION_RETURN;
 					bv_next_stop <- bv_line.bl_return_bs[0];
 				} else {
 					bv_next_stop <- bv_line.bl_outgoing_bs[(bv_line.bl_outgoing_bs index_of bv_next_stop) + 1];
 				}
 			} else { // return
 				if bv_current_bs = last(bv_line.bl_return_bs) { // last stop
-					bv_direction <- BUS_DIRECTION_OUTGOING;
+					bv_direction <- BL_DIRECTION_OUTGOING;
 					bv_next_stop <- bv_line.bl_outgoing_bs[0];
 				} else {
 					bv_next_stop <- bv_line.bl_return_bs[(bv_line.bl_return_bs index_of bv_next_stop) + 1];

@@ -43,8 +43,6 @@ global {
 	int passengers_on_board <- 0 update: BusVehicle sum_of(length(each.bv_passengers));
 	int arrived_people_to_dest <- 0 update: BusStop sum_of(length(each.bs_arrived_people));
 	
-	//int finished_1L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_ONE_LINE));
-	//int finished_2L_trips <- 0 update: Individual where !empty(each.ind_used_bts) sum_of length(each.ind_used_bts where (each.bt_type = BUS_TRIP_TWO_LINE));
 	int finished_1L_trips <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_used_bts) = 1));
 	int finished_2L_trips <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_used_bts) = 2));
 	
@@ -110,7 +108,7 @@ global {
 			}
 			BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
 			if current_bs != nil {
-				if int(dataMatrix[1,i]) = BUS_DIRECTION_OUTGOING {
+				if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
 					if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
@@ -158,7 +156,7 @@ global {
 		}
 		ask BusStop {
 			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)); 
+			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
 		// create bus connection for each line
@@ -195,7 +193,7 @@ global {
 				bv_current_bs <- bv_line.bl_outgoing_bs[0];
 				bv_current_bs.bs_current_stopping_buses <+ self;
 				bv_next_stop <- bv_current_bs;
-				bv_direction <- BUS_DIRECTION_OUTGOING;
+				bv_direction <- BL_DIRECTION_OUTGOING;
 				location <- bv_current_bs.location;
 				bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
 				i_counter <- i_counter + 1;
@@ -204,7 +202,7 @@ global {
 				bv_current_bs <- bv_line.bl_return_bs[0];
 				bv_current_bs.bs_current_stopping_buses <+ self;
 				bv_next_stop <- bv_current_bs;
-				bv_direction <- BUS_DIRECTION_RETURN;
+				bv_direction <- BL_DIRECTION_RETURN;
 				location <- bv_current_bs.location;
 				bv_stop_wait_time <- 0.0;
 			}		
@@ -326,8 +324,8 @@ global {
 						
 			ask BusLine {
 				list<BusVehicle> bvs <- BusVehicle where (each.bv_line = self);
-				list<BusVehicle> outs <- bvs where (each.bv_direction = BUS_DIRECTION_OUTGOING);
-				list<BusVehicle> rets <- bvs where (each.bv_direction = BUS_DIRECTION_RETURN);
+				list<BusVehicle> outs <- bvs where (each.bv_direction = BL_DIRECTION_OUTGOING);
+				list<BusVehicle> rets <- bvs where (each.bv_direction = BL_DIRECTION_RETURN);
 				
 				save '' + cycle + ',' + bl_name + ',' + length(outs) + ',' + length(rets) + ',' +
 					outs sum_of length(each.bv_passengers) + ',' + rets sum_of length(each.bv_passengers) + ',' +

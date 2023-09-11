@@ -1,6 +1,6 @@
 /**
 * Name: BusConnection
-* Description: defines the BusConnection species and its related constantes and variables.
+* Description: defines the BusConnection species and its related constantes, variables, and methods.
 * 				A BusConnection agent represents a possible connection between two bus lines
 * 				on the same bus stop or usig two beighboring bus stops.
 * Author: Laatabi

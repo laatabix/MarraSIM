@@ -10,8 +10,8 @@ model BusLine
 import "BusConnection.gaml"
 
 global {
-	int BUS_DIRECTION_OUTGOING <- 1;
-	int BUS_DIRECTION_RETURN <- 2;
+	int BL_DIRECTION_OUTGOING <- 1;
+	int BL_DIRECTION_RETURN <- 2;
 	list<rgb> BL_COLORS <- [#darkblue,#darkcyan,#darkgoldenrod,#darkgray,#darkkhaki,#darkmagenta,#darkolivegreen,
 				#darkorchid,#darksalmon,#darkseagreen,#darkslateblue,#darkslategray,#darkturquoise,#darkviolet];
 	
@@ -53,12 +53,12 @@ species BusLine schedules: [] parallel: true {
 			bc_bus_stops <-[bs1,bs2];
 			bc_bus_directions <- [dir1,dir2];
 			bc_connection_distance <- cd = -1 ? bc_bus_stops[0].dist_to_bs(bc_bus_stops[1]) : cd;
-			if dir1 = BUS_DIRECTION_OUTGOING {
+			if dir1 = BL_DIRECTION_OUTGOING {
 				myself.bl_outgoing_connections <+ self;
 			} else {
 				myself.bl_return_connections <+ self;
 			}
-			if dir2 = BUS_DIRECTION_OUTGOING {
+			if dir2 = BL_DIRECTION_OUTGOING {
 				bl2.bl_outgoing_connections <+ self;
 			} else {
 				bl2.bl_return_connections <+ self;
@@ -71,19 +71,19 @@ species BusLine schedules: [] parallel: true {
 		int d_ix <- bl_outgoing_bs index_of dbs;
 		
 		if o_ix != -1 and d_ix != -1 and o_ix < d_ix {
-			return BUS_DIRECTION_OUTGOING;
+			return BL_DIRECTION_OUTGOING;
 		} else {
 			o_ix <- bl_return_bs index_of obs;
 			d_ix <- bl_return_bs index_of dbs;
 			if o_ix != -1 and d_ix != -1 and o_ix < d_ix {
-				return BUS_DIRECTION_RETURN;
+				return BL_DIRECTION_RETURN;
 			}
 		}
 		return -1;
 	}
 	
 	BusStop previous_bs (int dir, BusStop bs) {
-		if dir = BUS_DIRECTION_OUTGOING {
+		if dir = BL_DIRECTION_OUTGOING {
 			int indx <- bl_outgoing_bs index_of bs;
 			return indx > 0 ? bl_outgoing_bs[indx-1] : nil;
 		} else {
@@ -93,7 +93,7 @@ species BusLine schedules: [] parallel: true {
 	}
 	
 	BusStop next_bs (int dir, BusStop bs) {
-		if dir = BUS_DIRECTION_OUTGOING {
+		if dir = BL_DIRECTION_OUTGOING {
 			int indx <- bl_outgoing_bs index_of bs;
 			return indx < length(bl_outgoing_bs)-1 ? bl_outgoing_bs[indx+1] : nil;
 		} else {
