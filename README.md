@@ -14,7 +14,7 @@ We present here **MarraSIM**, our agent-based model that simulates the public tr
 
 # MarraSIM Model
 
-**MarraSIM** (**Marra***kesh* **SIM***ulator*) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the [ODD](http://eprints.bournemouth.ac.uk/33918/) (Overview, Design concepts, Details) standard and its extension [ODD+2D](https://www.jasss.org/21/2/9.html) (ODD + Decision + Data).
+**MarraSIM** (**Marra**kesh **SIM**ulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the [ODD](http://eprints.bournemouth.ac.uk/33918/) (Overview, Design concepts, Details) standard and its extension [ODD+2D](https://www.jasss.org/21/2/9.html) (ODD + Decision + Data).
 
 ## Overview
 
@@ -31,11 +31,11 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 <br/><i>UML Class diagram of the MarraSIM model.</i>
 </p>
 
-**Building** : these agents represent all types of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included for visualization purposes only.
+**Building** : this agent represent any type of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included only for visualization purpose.
 
-**District** : represents one entity of the city's administrative division. Each district is identified by a code and a name.
+**District** : represents one entity of the city's administrative division. Each district is identified by a code (*dits_id*) and a name (*dist_name*).
 
-**PDUZone** : represents one entity of the adopted division in the PDU (Plan de Déplacements Urbains) document. Each PDU zone is identified by a code and a name and may belong to one or multiple administrative districts.
+**PDUZone** : represents one entity of the adopted division in the PDU (Plan de Déplacements Urbains) document. Each PDU zone is identified by a code (*zone_id*) and may belong to one or multiple administrative districts.
 
 **Individual** : represents one passenger that has a PDU zone as origin and another one as a destination. Each individual has to take a bus or a taxi to reach its destination while minimizing travel time and cost. Each individual has four main attributes:
   - *ind_moving* : a boolean that indicates whether the individual has started its journey or not.
@@ -123,7 +123,7 @@ At initialization, the simulation environment is created based on the shapefiles
 
 #### Data overview
 
-Data include shapefiles and data on bus network and mobility. These data come from different sources including online databases and websites and official reports.
+Data include shapefiles and data on the bus network, traffic, and mobility. These data come from different sources including online databases and websites and official reports.
   
   - **Shapefiles** : serve to build the simulation environment (infrastructure and visual aspects). The included shapefiles are:
 
