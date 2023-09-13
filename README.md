@@ -33,17 +33,17 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 **Building** : this agent represent any type of buildings in the city (residential, industrial, commercial, ...). In the current version of the model, buildings are included only for visualization purpose.
 
-**District** : represents one entity of the city's administrative division. Each district is identified by a code (*dits_id*) and a name (*dist_name*).
+**District** : represents one entity of the city's administrative division. Each district is identified by a code (*dits_code*) and a name (*dist_name*).
 
-**PDUZone** : represents one entity of the adopted division in the PDU (Plan de Déplacements Urbains) document. Each PDU zone is identified by a code (*zone_id*) and may belong to one or multiple administrative districts.
+**PDUZone** : represents one entity of the adopted division in the PDU (Plan de Déplacements Urbains) document. Each PDU zone is identified by a code (*zone_code*) and a name (*zone_name*). This zoning is a sub-division of the administrative zoning, hence, a pdu zone may belong to one or multiple administrative districts.
 
-**Individual** : represents one passenger that has a PDU zone as origin and another one as a destination. Each individual has to take a bus or a taxi to reach its destination while minimizing travel time and cost. Each individual has four main attributes:
+**Individual** : represents one passenger that has a PDU zone (and a bus stop) as origin and another one as a destination. Each individual has to take a bus or a taxi to reach its destination while minimizing travel time and cost. An individual has four main attributes:
   - *ind_moving* : a boolean that indicates whether the individual has started its journey or not.
   - *ind_arrived* : a boolean that indicates whether the individual has reached its destination or not.
-  - *ind_waiting_time* : an integer that indicates how much time (in seconds) the individual has waited in the bus stop before taking a transport mean.
-  - *ind_trip_time* : an integer that indicates how much time (in seconds) the individual has traveled to reach its destination. This time starts when taking the first transport mean and ends when leaving the last transport mean.
+  - *ind_waiting_times* : a list of integers that indicates how much time (in seconds) the individual has been waiting at bus stops before taking transport means used in its journey.
+  - *ind_trip_time* : an integer that indicates how much time (in seconds) the individual has traveled to reach its destination. This time starts when taking the first transport mean (at origin) and ends when leaving the last transport mean (at destination).
 
-**BusStop** : represents a location where a bus can take or drop off individuals. A bus stop has a name and may be an ordinary in-between stop, or a departure/terminus for one or multiple bus lines.
+**BusStop** : represents a location where a bus can take or drop off individuals. A bus stop has a code (*bs_id*) and a name (*bs_name*) and may be an ordinary in-between stop, or a departure/terminus for one or multiple bus lines (*bs_depart_or_terminus*is set to true). Each bus stop has a list of neighbors (*bs_neighbors*) that can also be used to take a trip by any individual waiting at the bus stop. 
 
 **RoadSegment** : represents one segment of the road network. All roads are divided into segments of 100m maximum. If a road segment is in the urban zone (represented by the boolean attribute *rs_in_city*, it can have a traffic density of four levels corresponding to the levels of the Google Traffic API:
   - ![](https://placehold.co/10x10/008000/008000.png) Normal with no traffic delays (green).
