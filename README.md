@@ -4,7 +4,7 @@
   <img width="600" height="150" alt="IMAROC header" src="https://github.com/laatabix/MarraSIM/assets/15381143/7380bdce-d16f-4a83-93ed-c6e8b3e04ac7">
 </p>
 
-**I-Maroc** (_**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision_) is a project that aims to design and implement computer simulations for health and environment by means of advanced artificial intelligence, data analysis, and mathematical tools. In the workpackage 3 (urban and inter-urban mobility), we work on modeling multiple aspects of road traffic in Marrakesh to propose solutions and scenarios in order to improve mobility and reduce pollution and congestion. We mainly use artificial intelligence to generate synthetical road traffic, and simulate/optimize the public transport network. These two axis are intended to minimize the road traffic related pollution which will be evaluated using the [**MarrakAIR**](https://github.com/gnoubi/MarrakAir) model.  
+**I-Maroc** (_**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision_) is a project that aims to design and implement computer simulations for health and environment by means of advanced artificial intelligence, data analysis, and mathematical tools. In the **workpackage 3** (*urban and inter-urban mobility*), we work on modeling multiple aspects of the road traffic in Marrakesh to propose solutions and scenarios in order to improve mobility and reduce pollution and congestion. We mainly use artificial intelligence to generate synthetical road traffic, and simulate/optimize the public transport network (Bus and Grand Taxis networks). These two axis are intended to minimize the road traffic related pollution which will be evaluated using the [**MarrakAIR**](https://github.com/gnoubi/MarrakAir) model. 
 
 <p align="center">
   <img width="600" height="240" alt="IMAROC - WP3" src="https://github.com/laatabix/MarraSIM/assets/15381143/97889f53-1766-4ea0-bb79-32ac1efc8cef">
@@ -13,14 +13,17 @@
 We present here **MarraSIM**, our agent-based model that simulates the public transport network in Marrakesh. MarraSIM uses the [GAMA platform](https://github.com/gama-platform/).
 
 # MarraSIM Model
-MarraSIM (Marrakesh SIMulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the ODD (Overview, Design concepts, Details) standard and its extension ODD+2D (ODD + Decision + Data).
+
+**MarraSIM** (**Marra***kesh* **SIM***ulator*) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the [ODD](http://eprints.bournemouth.ac.uk/33918/) (Overview, Design concepts, Details) standard and its extension [ODD+2D](https://www.jasss.org/21/2/9.html) (ODD + Decision + Data).
 
 ## Overview
 
 ### Purpose
+
 The purpose of the model is to simulate public transport in Marrakesh to understand the complex interactions between the transport demand, the bus network, and the Grand Taxis fleet. Using realistic data representing traffic flow, OD trips, and public transport fleet, the model allows testing different strategies that may reduce waiting and travel times, increase public transport efficiency, and limit the environmental burden of road traffic in Marrakesh.
 
 ### Entities, state variables, and scales
+
 The model simulates a day (06:00 - 23:00) of public transport journeys in Marrakesh. The time step represents one minute. Bus vehicles move between bus stops to take and drop off people in outgoing and return journeys between a start point and a terminus. To simulate these dynamics, 11 agents are implemented to represent the city environment and the active agents. The following figure depicts the class diagram of the model.
 
 <p align="center">
@@ -56,27 +59,38 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 **TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
 
 **BusLine** : represents two paths of outgoing and return bus stops between a start (departure) and end (terminus) points. Each bus line is named and has the two following characteristics:
+  
   - *bl_interval_time* : indicates the theoretical interval time between buses of the same line.
+  
   - *bl_commercial_speed* : indicates the average speed of buses while considering the constraints of bus stops, traffic lights, and congestion.
 
 **BusVehicle** : represents a vehicle that serves a bus line. The same bus line can be served by multiple vehicles. Each bus vehicle has the following attributes:
+  
   - *bv_direction* : indicates whether a bus is currently in an outgoing or return direction.
+  
   - *bv_speed* : indicates the true speed of a moving bus.
+  
   - *bv_max_capacity* : indicates the maximum number of passengers that the bus can take.
+  
   - *bv_moving* : a boolean to indicate whether a bus is currently moving or not.
 
 **BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two different but close bus stops otherwise. The proximity in this model is defined as a 400 m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered.
 
 **BusTrip** : represents a trip between an origin and a destination bus stops using one or two bus lines. The following attributes characterize a bus trip:
+ 
   - *bt_type* : indicates whether the trip is using one or two bus lines.
+  
   - *bt_bus_directions* : stores the direction (outgoing or return) of each bus used in the trip.
+  
   - *bt_bus_distances* : stores the traveled distances by the buses used in the trip.
+  
   - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
 
 ### Process overview and scheduling
 At each time step (each minute), ...
 
 ## Design concepts
+  
   1- *Theoretical and empirical background* : agents in MarraSIM represent principal concepts involved in the public transport and road traffic.
   
   2- *Individual decision-making* : 
@@ -98,28 +112,39 @@ At each time step (each minute), ...
   10- *Observation* : 
 
 ## Details
+
 ### Implementation details 
 
 ### Initialization
+
 At initialization, the simulation environment is created based on the shapefiles (in "*/includes/gis/*") representing districts, buildings, PDU zones, road network, traffic signals, and bus stops. Than bus lines, bus connections, individuals, travel plans are created based on data files in "*/includes/csv/*".
 
 ### Input data
+
 #### Data overview
+
 Data include shapefiles and data on bus network and mobility. These data come from different sources including online databases and websites and official reports.
-  - **Shapefiles** : serve to build the simulation environment (infrastructure and visual aspects). The included shapefiles are: 
+  
+  - **Shapefiles** : serve to build the simulation environment (infrastructure and visual aspects). The included shapefiles are:
+
     - *Administrative boundaries of districts* : the official zoning of the city. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara.
     <p align="center">
     <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/a626c016-c7d0-4db0-bb2e-b2ae8e0defcb">
     <br/><i>Administrative districts of Marrakesh.</i>
     </p>
+    
     - *PDU zoning* : The PDU (Plan de Déplacements Urbains) is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it.
       <p align="center">
       <img width="440" height="355" alt="PDU zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143        /41a43e8f-a5eb-4161-b4c5-e1b77ea601e5">
       <br/><i>The 27 PDU zones of Marrakesh.</i>
       </p>
+
     - *Road network* :
+
     - *City buildings* :
+
     - *Bus stops network* :
+
     - *Traffic signals network* :
     
 #### Data structure
