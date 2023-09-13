@@ -1,20 +1,23 @@
 /**
 * Name: District
-* Description: defines the District species and its related constantes and variables.
+* Description: defines the District species and its related constantes, variables, and methods.
 * 				A District agent represents one entity of the administrative division.
-* 				In the case of Marrakesh, there are six districts: Mechouar-Kasbah, Annakhil, Guéliz, Médina, Menara, and SYBA.
-* Author: Laatabi
+* 				In the case of Marrakesh, there are six districts: Mechouar-Kasbah, Annakhil, Guéliz,
+* 																	Médina, Menara, and SYBA.
+* Authors: Laatabi
+* For the i-Maroc project.
 */
 
 model District
 
 global {
+	
 	// simulation starts at 06:00 morning
-	float sim_start_hour <- 6#hour;
+	float SIM_START_HOUR <- 6#hour;
 	
 	// format the current time to a printable format [hh:mm:ss]
 	string formatted_time { 
-		int tt <- int(sim_start_hour) + int(time);
+		int tt <- int(SIM_START_HOUR) + int(time);
 		return "[" + get_time_frag(tt, 1) + ":" + get_time_frag(tt, 2) + ":" + get_time_frag(tt, 3) + "] ";
 	}
 	
@@ -35,11 +38,17 @@ global {
 	}		
 }
 
+/*******************************/
+/******* District Species *****/
+/*****************************/
+
 species District schedules: [] {
-	string dist_id;
+	int dist_code;
 	string dist_name;
 	
 	aspect default {
 		draw shape color: #whitesmoke border: #gray;
 	}
 }
+
+/*** end of species definition ***/

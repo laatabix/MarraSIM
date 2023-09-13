@@ -73,7 +73,7 @@ global {
 		
 		write "Computing BusStop neighbors ..";
 		ask BusStop {
-			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
+			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
 			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		

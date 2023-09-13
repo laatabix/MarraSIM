@@ -1,8 +1,12 @@
 /**
-* Name: Main file to launch the model.
-* The model simulates the public transport traffic in Marrakesh.
-* Author: Ahmed Laatabi
-* i-Maroc project 
+* Name: Main
+* Description: this is the main file to launch the MarraSIM model.
+* 			The model simulates the public transport traffic in Marrakesh.
+* 			The current version of the model includes the bus network.
+* 			The Grand Taxi network will be included in the next version.
+* 
+* Authors: Laatabi
+* For the i-Maroc project. 
 */
 
 model MarraSIM
@@ -11,15 +15,16 @@ import "classes/PDUZone.gaml"
 import "classes/Building.gaml"
 
 global {
-	
+	// the six districts of Marrakesh
 	map<int,string> marrakech_districts <- [1::"Mechouar_Kasbah", 2::"Annakhil", 3::"Guéliz",
 											4::"Médina", 5::"Menara", 6::"SYBA"];
-	file marrakesh_districts <- shape_file("../includes/gis/marrakesh.shp");
-	file marrakesh_pdu <- shape_file("../includes/gis/zonage_pdu.shp");
-	file marrakesh_roads <- shape_file("../includes/gis/road_segments.shp");
-	file marrakesh_buildings <- shape_file("../includes/gis/buildings.shp");
-	file marrakesh_bus_stops <- shape_file("../includes/gis/bus_stops.shp");
-	file marrakesh_traffic_lights <- shape_file("../includes/gis/traffic_signals.shp");
+	// shapefiles of the model environment
+	file marrakesh_districts <- shape_file("../includes/gis/marrakesh.shp"); // administrative districts
+	file marrakesh_pdu <- shape_file("../includes/gis/zonage_pdu.shp"); // PDU (Plan de Déplacement Urbain) zoning
+	file marrakesh_roads <- shape_file("../includes/gis/road_segments.shp"); // road network
+	file marrakesh_buildings <- shape_file("../includes/gis/buildings.shp"); // buildings
+	file marrakesh_bus_stops <- shape_file("../includes/gis/bus_stops.shp"); // bus stops
+	file marrakesh_traffic_signals <- shape_file("../includes/gis/traffic_signals.shp"); // traffic signals (stop signs and traffic lights)
 	
 	// shape of the environment (the convex hull of regional roads shapefile)
 	geometry shape <- envelope (marrakesh_roads);
@@ -37,21 +42,27 @@ global {
 	bool save_data_on <- false; // whether to save simulation data (to /results) or not
 	float sim_id;
 	
-	// stats
+	// stats and displayed graphs
 	int waiting_people_for_1st <- 0 update: BusStop sum_of(length(each.bs_waiting_people where (each.ind_current_plan_index=0)));
 	int waiting_people_for_2nd <- 0 update: BusStop sum_of(length(each.bs_waiting_people where (each.ind_current_plan_index=1)));
 	int passengers_on_board <- 0 update: BusVehicle sum_of(length(each.bv_passengers));
 	int arrived_people_to_dest <- 0 update: BusStop sum_of(length(each.bs_arrived_people));
 	
-	int finished_1L_trips <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_used_bts) = 1));
-	int finished_2L_trips <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_used_bts) = 2));
+	int finished_1L_journeys <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1));
+	int finished_2L_journeys <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2));
 	
-	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 1) mean_of (each.ind_trip_time);
-	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 2) mean_of (each.ind_trip_time);
+	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (each.ind_trip_time);
+	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (each.ind_trip_time);
 	
-	float mean_waiting_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 1) mean_of (sum(each.ind_waiting_times));
-	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_used_bts) = 2) mean_of (sum(each.ind_waiting_times));
+	float mean_waiting_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (sum(each.ind_waiting_times));
+	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (sum(each.ind_waiting_times));
 	
+	/*******************************************************************************************************************************/
+	/*******************************************************************************************************************************/
+	
+	/*******************************/
+	/******** Initilization *******/
+	/*****************************/
 	init {
 		write "--+-- START OF INIT --+--" color:#green;
 		
@@ -67,20 +78,20 @@ global {
 			save "cycle,tt1l,tt2l,wt1l,wt2l" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/times.csv";
 			save "cycle,bl,outs,rets,outs_board,rets_board,outs_traff,rets_traff,outs_sign,rets_sign,outs_psg,rets_psg"
 					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/buslines.csv";
-			save "cycle,ind,origin,destin,bttype,idx,bl,dir,dist,walk"
+			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk"
 					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/bustrips.csv";	
 		}
 		
 		// create the environment: city, districts, roads, traffic signals
 		write "Creating the city environment ...";
-		create District from: marrakesh_districts;
+		create District from: marrakesh_districts with: [dist_code::int(get("ID")), dist_name::get("NAME")];
 		create Building from: marrakesh_buildings;
-		create PDUZone from: marrakesh_pdu with: [zone_id::int(get("id")), zone_name::get("label")];
+		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
 		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))];
 		road_network <- as_edge_graph(list(RoadSegment));
 				
 		// creating traffic stops and traffic lights
-		create TrafficSignal from: marrakesh_traffic_lights with: [ts_type::get("fclass") = "stop" ? TRAFFIC_STOP_SIGN:TRAFFIC_LIGHT] {
+		create TrafficSignal from: marrakesh_traffic_signals with: [ts_type::get("fclass") = "stop" ? TRAFFIC_STOP_SIGN:TRAFFIC_LIGHT] {
 			//the closest road to the traffic signal
 			ts_rd_segment <- RoadSegment closest_to self;
 			// garantir que le traffic signal est sur une route (touche le polyline de la route)
@@ -95,6 +106,11 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
+			// if its in the city and did not overlap a PDU zone, affect the closest one
+			// the two shapefiles boundaries of districts and PDU are not completely identical !
+			if bs_zone = nil and bs_district != nil {
+				bs_zone <- PDUZone closest_to self;
+			}
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
@@ -155,7 +171,7 @@ global {
 			last(bl_return_bs).bs_depart_or_terminus <- true;
 		}
 		ask BusStop {
-			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
+			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
 			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
@@ -214,8 +230,8 @@ global {
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
-				ind_origin_zone <- PDUZone first_with (each.zone_id = int(dataMatrix[1,i]));
-				ind_destin_zone <- PDUZone first_with (each.zone_id = int(dataMatrix[2,i]));
+				ind_origin_zone <- PDUZone first_with (each.pduz_code = int(dataMatrix[1,i]));
+				ind_destin_zone <- PDUZone first_with (each.pduz_code = int(dataMatrix[2,i]));
 				ind_origin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
 				ind_destin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[4,i]));	
 			}
@@ -235,18 +251,12 @@ global {
 			create BusTrip {
 				bt_type <- int(dataMatrix[1,i]);
 				bt_start_bs <- BusStop first_with (each.bs_id = int(dataMatrix[2,i]));
-				bt_bus_lines <- [BusLine first_with (each.bl_name = string(dataMatrix[3,i]))];
-				bt_bus_stops <- [BusStop first_with (each.bs_id = int(dataMatrix[4,i]))];
-				bt_bus_directions <- [int(dataMatrix[5,i])];
-				bt_bus_dists <- [int(dataMatrix[6,i])];
-				if bt_type = BUS_TRIP_TWO_LINE {
-					bt_bus_lines <+ BusLine first_with (each.bl_name = string(dataMatrix[7,i]));
-					bt_bus_stops <+ BusStop first_with (each.bs_id = int(dataMatrix[8,i]));
-					bt_bus_directions <+ int(dataMatrix[9,i]);
-					bt_bus_dists <+ int(dataMatrix[10,i]);
-				}
-				bt_walk_dist <- int(dataMatrix[11,i]);
-				indiv_x.ind_bt_plan <+ self; 	
+				bt_bus_line <- BusLine first_with (each.bl_name = string(dataMatrix[3,i]));
+				bt_end_bs <- BusStop first_with (each.bs_id = int(dataMatrix[4,i]));
+				bt_bus_direction <- int(dataMatrix[5,i]);
+				bt_bus_distance <- int(dataMatrix[6,i]);
+				bt_walk_distance <- int(dataMatrix[7,i]);
+				indiv_x.ind_available_bt <+ self; 	
 			}
 		}
 		
@@ -254,14 +264,17 @@ global {
 		write "--+-- END OF INIT --+--" color:#green;
 	}
 	
+	/*** end of init definition ***/
+	
 	/*******************************************************************************************************************************/
 	/*******************************************************************************************************************************/
 	
-	// update road traffic and/or generate travellers each X minutes
 	int Nminutes <- 10; // Nminutes has to be a divider of 1hour to allow updating traffic levels (done by hour)
+	
+	// update road traffic and/or generate travellers each X minutes
 	reflex going_on when: int(time) mod int(Nminutes#minute) = 0 {
 		
-		int tt <- int(sim_start_hour) + int(time);
+		int tt <- int(SIM_START_HOUR) + int(time);
 		string hh <- get_time_frag(tt, 1);
 		
 		if int(hh) = 24 { // midight, end of a day simulation
@@ -307,7 +320,7 @@ global {
 		ask PDUZone {
 			list<int> indicators <- update_color();
 			if save_data_on {
-				save '' + cycle + ',' + zone_id + ',' + indicators[0] + ',' + indicators[1]
+				save '' + cycle + ',' + pduz_code + ',' + indicators[0] + ',' + indicators[1]
 											format: "text" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
 			}
 		}
@@ -336,16 +349,12 @@ global {
 			}
 			
 			ask unsaved_arrivals {
-				save '' + cycle + ',' + ind_id + ',' + ind_origin_zone.zone_id + ',' + ind_destin_zone.zone_id + ',' + 
-					ind_used_bts[0].bt_type + ',' + 0 + ',' + ind_used_bts[0].bt_bus_lines[0].bl_name + ',' +
-					ind_used_bts[0].bt_bus_directions[0] + ',' + ind_used_bts[0].bt_bus_dists[0] + ',' + ind_used_bts[0].bt_walk_dist
-							format: "text" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
-				if length(ind_used_bts) = 2 {
-					save '' + cycle + ',' + ind_id + ',' + ind_used_bts[1].bt_start_bs.bs_zone.zone_id + ',' + 
-							last(ind_used_bts[1].bt_bus_stops).bs_zone.zone_id+ ',' +
-					ind_used_bts[1].bt_type + ',' + 1 + ',' + last(ind_used_bts[1].bt_bus_lines).bl_name + ',' +
-					last(ind_used_bts[1].bt_bus_directions) + ',' + last(ind_used_bts[1].bt_bus_dists) + ',' + ind_used_bts[1].bt_walk_dist
-							format: "text" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";
+				loop i from: 0 to: length(ind_actual_journey) - 1 {
+					save '' + cycle + ',' + ind_id + ',' + ind_actual_journey[i].bt_start_bs.bs_zone.pduz_code + ',' + 
+						ind_actual_journey[i].bt_end_bs.bs_zone.pduz_code + ',' + ind_actual_journey[i].bt_type + ',' +
+						ind_actual_journey[i].bt_bus_line.bl_name + ',' + ind_actual_journey[i].bt_bus_direction + ',' +
+						ind_actual_journey[i].bt_bus_distance + ',' + ind_actual_journey[i].bt_walk_distance
+						format: "text" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";		
 				}
 			}
 			unsaved_arrivals <- [];
@@ -428,10 +437,10 @@ experiment MarraSIM type: gui {
 				data "On bus" color: #green value: passengers_on_board marker_shape: marker_empty;
 				data "Arrived" color: #blue value: arrived_people_to_dest marker_shape: marker_empty;
 			}
-			chart "Number of Finished trips" type: series y_tick_line_visible: true x_tick_line_visible: false
+			chart "Number of Finished Journeys" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0} x_label: "Time" {
-				data "1-Line" color: #darkgreen value: finished_1L_trips marker_shape: marker_empty;
-				data "2-Lines" color: #darkred value: finished_2L_trips marker_shape: marker_empty;
+				data "1-Line" color: #darkgreen value: finished_1L_journeys marker_shape: marker_empty;
+				data "2-Lines" color: #darkred value: finished_2L_journeys marker_shape: marker_empty;
 			}
 			chart "Mean Travel Time (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.34} x_label: "Time" {
@@ -452,7 +461,7 @@ experiment MarraSIM type: gui {
 			chart "Mean of Bus Speed (km/h)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.67} x_label: "Time" {
 				data "Theoretical commercial speed" color: #darkgreen value: BusVehicle mean_of(each.bv_line.bl_com_speed) marker_shape: marker_empty;
-				data "Actual simulation speed" color: #darkred value: BusVehicle mean_of(each.bv_speed) marker_shape: marker_empty;
+				data "Actual simulation speed" color: #darkred value: BusVehicle mean_of(each.bv_actual_speed) marker_shape: marker_empty;
 			}
 		}
 	}

@@ -2,7 +2,8 @@
 * Name: RoadSegment
 * Description: defines the RoadSegment species and its related constantes, variables, and methods.
 * 				A RoadSegment agent represents one segment of the road network.
-* Author: Laatabi
+* Authors: Laatabi
+* For the i-Maroc project.
 */
 
 model RoadSegment
@@ -10,6 +11,7 @@ model RoadSegment
 import "BusLine.gaml"
 
 global {
+	
 	// the four traffic levels of Google Traffic 
 	int G_TRAFF_LEVEL_GREEN <- 1;
 	int G_TRAFF_LEVEL_ORANGE <- 2;
@@ -25,6 +27,10 @@ global {
 	graph road_network;
 }
 
+/*******************************/
+/***** RoadSegment Species ****/
+/*****************************/
+
 species RoadSegment schedules: [] parallel: true {
 	int rs_id;
 	rgb rs_col <- #green;
@@ -39,3 +45,5 @@ species RoadSegment schedules: [] parallel: true {
 		}
 	}
 }
+
+/*** end of species definition ***/

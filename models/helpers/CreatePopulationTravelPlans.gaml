@@ -20,7 +20,7 @@ global {
 	
 	init {
 		create District from: marrakesh_districts;
-		create PDUZone from: marrakesh_pdu with: [zone_id::int(get("id")), zone_name::get("label")];
+		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
 		write "create districts and zones .. OK";
 		
 		create RoadSegment from: marrakesh_roads;
@@ -33,6 +33,11 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
+			// if its in the city and did not overlap a PDU zone, affect the closest one
+			// the two shapefiles boundaries of districts and PDU are not completely identical !
+			if bs_zone = nil and bs_district != nil {
+				bs_zone <- PDUZone closest_to self;
+			}
 		}
 		write "create BusStop .. OK";
 		
@@ -82,7 +87,7 @@ global {
 		
 		write "Computing BusStop neighbors ..";
 		ask BusStop {
-			// neighbors + self represents the waiting BSs where an individual can take or leave a bus during a trip
+			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
 			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
@@ -106,10 +111,10 @@ global {
 		write "Creating population ...";
 		matrix<int> ODMatrix <- matrix<int>(csv_file("../../includes/csv/ODMatrix.csv",false));
 		loop i from: 0 to: ODMatrix.rows -1 {
-			PDUZone o_zone <- PDUZone first_with (each.zone_id = i+1);
+			PDUZone o_zone <- PDUZone first_with (each.pduz_code = i+1);
 			list<BusStop> obstops <- BusStop where (each.bs_zone = o_zone);
 			loop j from: 0 to: ODMatrix.columns -1{
-				PDUZone d_zone <- PDUZone first_with (each.zone_id = j+1);
+				PDUZone d_zone <- PDUZone first_with (each.pduz_code = j+1);
 				list<BusStop> dbstops <- BusStop where (each.bs_zone = d_zone);
 				create Individual number: ODMatrix[j,i]{
 					ind_id <- int(self);
@@ -131,35 +136,35 @@ global {
 		write "Creating travel plans ..";
 		ask Individual {
 			// if another individual with the same origin and destination bus stops has already a planning, just copy it
-			Individual ind <- first(Individual where (!empty(each.ind_bt_plan) and
+			Individual ind <- first(Individual where (!empty(each.ind_available_bt) and
 							each.ind_origin_bs = self.ind_origin_bs and each.ind_destin_bs = self.ind_destin_bs));
 			if ind != nil {
-				self.ind_bt_plan <- copy (ind.ind_bt_plan);	
+				self.ind_available_bt <- copy (ind.ind_available_bt);	
 			} else { // else, compute
 				do make_plans;
 			}
 			write ind_id;
 		}
-		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_bt_plan));
+		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));	
 		
 		write "Recomputing planning for individuals without plans..";
-		ask Individual where empty(each.ind_bt_plan) {
-			Individual ind <- one_of(Individual where (!empty(each.ind_bt_plan) and
+		ask Individual where empty(each.ind_available_bt) {
+			Individual ind <- one_of(Individual where (!empty(each.ind_available_bt) and
 							each.ind_origin_zone = self.ind_origin_zone and each.ind_destin_zone = self.ind_destin_zone));
 			if ind = nil {
-				ind <- one_of(Individual where (!empty(each.ind_bt_plan)));
+				ind <- one_of(Individual where (!empty(each.ind_available_bt)));
 			}
 			if ind != nil {
 				self.ind_origin_zone <- ind.ind_origin_zone;
 				self.ind_origin_bs <- ind.ind_origin_bs;
 				self.ind_destin_zone <- ind.ind_destin_zone;
 				self.ind_destin_bs <- ind.ind_destin_bs;
-				self.ind_bt_plan <- copy(ind.ind_bt_plan);	
+				self.ind_available_bt <- copy(ind.ind_available_bt);	
 			} else {
 				do die;
 			}
 		}
-		write "2 - Population with a plan : " + length(Individual where !empty(each.ind_bt_plan));
+		write "2 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));
 		
 		write "Saving populations and travel plans to text files ...";
 		bool dl <- delete_file("../../includes/csv/populations.csv");
@@ -168,18 +173,13 @@ global {
 		save "ind,type,start,bl1,bs1,dir1,dist1,bl2,bs2,dir2,dist2,walk" format: 'text' rewrite: true to: "../../includes/csv/travel_plans.text";
 		
 		ask Individual {
-			save '' + ind_id + ',' + ind_origin_zone.zone_id + ',' + ind_destin_zone.zone_id + ',' + 
+			save '' + ind_id + ',' + ind_origin_zone.pduz_code + ',' + ind_destin_zone.pduz_code + ',' + 
 							ind_origin_bs.bs_id + ',' + ind_destin_bs.bs_id
 					format: "text" rewrite: false to: "../../includes/csv/populations.text";
 			
-			loop bt over: ind_bt_plan {
-				string ss <- bt.bt_bus_lines[0].bl_name + ',' + bt.bt_bus_stops[0].bs_id + ',' + bt.bt_bus_directions[0] + ',' + bt.bt_bus_dists[0];
-				if bt.bt_type = BUS_TRIP_TWO_LINE {
-					ss <- ss + ',' + bt.bt_bus_lines[1].bl_name + ',' + bt.bt_bus_stops[1].bs_id + ',' + bt.bt_bus_directions[1] + ',' + bt.bt_bus_dists[1];
-				} else {
-					ss <- ss + ',' + 'NONE' + ',' + -1 + ',' + -1 + ',' + -1;
-				}
-				save '' + ind_id + ',' + bt.bt_type + ',' + bt.bt_start_bs.bs_id + ',' + ss + ',' + bt.bt_walk_dist
+			loop bt over: ind_available_bt {
+				save '' + ind_id + ',' + bt.bt_type + ',' + bt.bt_start_bs.bs_id + ',' + bt.bt_bus_line.bl_name + ',' +
+						bt.bt_end_bs.bs_id + ',' + bt.bt_bus_direction + ',' + bt.bt_bus_distance + ',' + bt.bt_walk_distance
 						format: "text" rewrite: false to: "../../includes/csv/travel_plans.text";
 			}	
 		}
