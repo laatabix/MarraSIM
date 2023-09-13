@@ -45,16 +45,14 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 
 **BusStop** : represents a location where a bus can take or drop off individuals. A bus stop has a code (*bs_id*) and a name (*bs_name*) and may be an ordinary in-between stop, or a departure/terminus for one or multiple bus lines (*bs_depart_or_terminus*is set to true). Each bus stop has a list of neighbors (*bs_neighbors*) that can also be used to take a trip by any individual waiting at the bus stop. 
 
-**RoadSegment** : represents one segment of the road network. All roads are divided into segments of 100m maximum. If a road segment is in the urban zone (represented by the boolean attribute *rs_in_city*, it can have a traffic density of four levels corresponding to the levels of the Google Traffic API:
+**RoadSegment** : represents one segment of the road network. All roads are divided into segments of 100m maximum. If a road segment is in the urban zone (represented by the boolean attribute *rs_in_city*), it can have a traffic density of four levels corresponding to the levels of the Google Traffic API:
+
   - ![](https://placehold.co/10x10/008000/008000.png) Normal with no traffic delays (green).
   - ![](https://placehold.co/10x10/ffa500/ffa500.png) Medium traffic (orange).
   - ![](https://placehold.co/10x10/ff0000/ff0000.png) High traffic (red).
   - ![](https://placehold.co/10x10/8b0000/8b0000.png) Heavy traffic (dark red).
 
-<p align="center">
-  <img width="440" height="355" alt="Urban roads of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/4261175a-b6ca-49ca-9110-9ea0d16d91e7">
-  <br/><i>Urban road network of Marrakesh.</i>
-</p>
+
 
 **TrafficSignal** : represents a sign that regulates traffic and may be stop sign or a traffic light.
 
@@ -140,6 +138,11 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
       </p>
 
     - *Road network* :
+   
+    <p align="center">
+    <img width="440" height="355" alt="Urban roads of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/4261175a-b6ca-49ca-9110-9ea0d16d91e7">
+    <br/><i>Urban road network of Marrakesh.</i>
+    </p>
 
     - *City buildings* :
 
