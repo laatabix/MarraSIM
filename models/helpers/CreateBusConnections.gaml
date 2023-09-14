@@ -1,9 +1,9 @@
 /**
 * Name: CreateBusConnections
 * Description : this model creates the list of possible bus connections based on available bus lines and bus stops.
-* 				The result is stored on a file that is read by the main model.
-* Author: Laatabi
-* Tags: 
+* 				The result is stored in a file to read and use by the main model.
+* Authors: Laatabi
+* For the i-Maroc project. 
 */
 
 model CreateBusConnections
@@ -115,6 +115,7 @@ global {
 		ask BusConnection {
 			BusStop bs <- bc_bus_lines[0].next_bs(bc_bus_directions[0],bc_bus_stops[0]);
 			if bs != nil {
+				// if the connection is better at the next stop, change to the next stop
 				int dd <- bs.dist_to_bs(bc_bus_stops[1]);
 				if dd < bc_connection_distance  {
 					bc_bus_stops[0] <- bs;
@@ -122,7 +123,6 @@ global {
 				}
 			}
 		}
-		
 		write "Number of created bus connections: " + length(BusConnection);
 		
 		write "Saving bus connections to a text file ...";

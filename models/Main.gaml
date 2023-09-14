@@ -15,9 +15,7 @@ import "classes/PDUZone.gaml"
 import "classes/Building.gaml"
 
 global {
-	// the six districts of Marrakesh
-	map<int,string> marrakech_districts <- [1::"Mechouar_Kasbah", 2::"Annakhil", 3::"Guéliz",
-											4::"Médina", 5::"Menara", 6::"SYBA"];
+
 	// shapefiles of the model environment
 	file marrakesh_districts <- shape_file("../includes/gis/marrakesh.shp"); // administrative districts
 	file marrakesh_pdu <- shape_file("../includes/gis/zonage_pdu.shp"); // PDU (Plan de Déplacement Urbain) zoning
@@ -29,18 +27,16 @@ global {
 	// shape of the environment (the convex hull of regional roads shapefile)
 	geometry shape <- envelope (marrakesh_roads);
 	
-	// affluence of passengers every hour starting from midnight (0)
+	// affluence of passengers every hour starting from midnight (0). These data are based on assumption and may not be accurate 
 	float current_affluence <- 0.0;
 	list<float> h_affluence <- [0.000,0.000,0.000,0.000,0.000,0.000,0.025,0.050,0.100,0.100,0.050,0.050, // [00:00 -> 11:00]
 								0.100,0.100,0.025,0.025,0.025,0.050,0.100,0.050,0.050,0.050,0.025,0.025];// [12:00 ->  23:00]
 	
-	// defining one simulation step as one minute
-	float step <- 1#minute;
-	font AFONT0 <- font("Calibri", 16, #bold);
-	
-	// simulation parameters 
+	// simulation parameters
+	float step <- 1#minute; // defining one simulation step as one minute
 	bool save_data_on <- false; // whether to save simulation data (to /results) or not
-	float sim_id;
+	float sim_id; // a unique simulation id for data storage
+	font AFONT0 <- font("Calibri", 16, #bold);
 	
 	// stats and displayed graphs
 	int waiting_people_for_1st <- 0 update: BusStop sum_of(length(each.bs_waiting_people where (each.ind_current_plan_index=0)));
@@ -58,13 +54,12 @@ global {
 	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (sum(each.ind_waiting_times));
 	
 	/*******************************************************************************************************************************/
-	/*******************************************************************************************************************************/
 	
 	/*******************************/
-	/******** Initilization *******/
+	/******** Initialization *******/
 	/*****************************/
 	init {
-		write "--+-- START OF INIT --+--" color:#green;
+		write "--+-- START OF INIT --+--" color: #green;
 		
 		if !save_data_on { // warn when save data is off
 			bool data_off_ok <- user_confirm("Confirm","Data saving is off. Do you want to proceed ?");
@@ -144,6 +139,7 @@ global {
 				return;
 			}
 		}
+		
 		// calculate distances of each bus line
 		geometry geom;
 		ask BusLine {
@@ -281,7 +277,7 @@ global {
 			do pause;
 		}
 		
-		// Each hour, the traffic levels on roads are updated
+		// Each hour, the traffic levels of roads are updated
 		if int(time) mod int(1#hour) = 0 {
 			if int(hh) >= 6 and int(hh) <= 23 { // 06:00 - 23:00 range only
 				current_affluence <- h_affluence[int(hh)];
@@ -304,7 +300,7 @@ global {
 		}
 		
 		// each X minutes
-		// ask a random number of people (N%) to move and make a program for their trip
+		// ask a random number of people (N%) to travel 
 		int nn <- int(current_affluence / (60/Nminutes) * length(Individual));
 		write formatted_time() + nn + " new people are travelling ...";
 		ask nn among (Individual where (!each.ind_moving)) {
@@ -313,7 +309,7 @@ global {
 			ind_waiting_bs.bs_waiting_people <+ self;
 			ind_waiting_times[0] <- int(time);
 		}
-		write formatted_time()  + "Total people waiting at bus stops : " + length(Individual where (each.ind_moving)) color: #purple;
+		write formatted_time()  + "Total people waiting at bus stops : " + BusStop sum_of length(each.bs_waiting_people) color: #purple;
 		
 		// update colors of zones
 		write "Updating the colors of PDU zones ..";
@@ -368,9 +364,7 @@ global {
 experiment MarraSIM type: gui {
 	
 	parameter "Show Bus Lines" category:"Visualization" var: show_buslines;
-	
 	parameter "Use Google Traffic" category:"Traffic" var: traffic_on;
-	
 	parameter "Free Transfer" category:"Bus network" var: transfer_on;
 	
 	init {
@@ -395,7 +389,7 @@ experiment MarraSIM type: gui {
 			species TrafficSignal refresh: false;
 			species BusVehicle;
 		}
-		
+		//----------------------------------------------------------------------------------------------------------------//
 		display "Waiting People" type: opengl background: #whitesmoke{
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
 			
@@ -412,6 +406,7 @@ experiment MarraSIM type: gui {
 			
 			species PDUZone aspect: waiting_people;
 		}
+		//----------------------------------------------------------------------------------------------------------------//
 		display "Waiting Time" type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
 			
@@ -428,7 +423,7 @@ experiment MarraSIM type: gui {
 	        
 			species PDUZone aspect: waiting_time;
 		}
-		
+		//----------------------------------------------------------------------------------------------------------------//
 		display Mobility type: java2D background: #whitesmoke {
 			chart "Number of Travellers" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0} x_label: "Time" {

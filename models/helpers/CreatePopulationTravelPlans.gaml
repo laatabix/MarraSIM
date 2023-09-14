@@ -1,9 +1,9 @@
 /**
 * Name: CreatePopulationTravelPlans
-* Description : this model creates the population and the possible travel plans of every individual.
-* 				The result is stored on a file that is read by the main model.
-* Author: Laatabi
-* Tags: 
+* Description : this model creates the population and the possible bus trips for each individual.
+* 				The result is stored in a file to read and use by the main model.
+* Authors: Laatabi
+* For the i-Maroc project. 
 */
 
 model CreatePopulationTravelPlans
