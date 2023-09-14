@@ -114,7 +114,7 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 
   - **Shapefiles** : serve to build the simulation environment (infrastructure and visual aspects). The included shapefiles are:
 
-     - *Administrative boundaries of districts* : the official zoning of the city. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara.
+     - *Administrative boundaries of districts* : the official zoning of the city. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara. The shapefile is downloaded from OSM.
     <p align="center">
     <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="assets/admin_zones.png">
     <br/><i>Administrative districts of Marrakesh.</i>
@@ -126,8 +126,7 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
       <br/><i>The 27 PDU zones of Marrakesh.</i>
       </p>
 
-    - *Road network* :
-   
+    - *Road network* : the shapefile is downloaded from OSM and filtered to inlude only relevant roads used by bus lines and Grand Taxis.
     <p align="center">
     <img width="440" height="355" alt="Urban roads of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/4261175a-b6ca-49ca-9110-9ea0d16d91e7">
     <br/><i>Urban road network of Marrakesh.</i>
@@ -138,7 +137,10 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
     - *Bus stops network* :
 
     - *Traffic signals network* :
-    
+  
+  - **Traffic data** :
+  - **Mobility data** :
+      
 #### Data structure
 #### Data mapping
 #### Data patterns
