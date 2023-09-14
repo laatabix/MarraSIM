@@ -132,7 +132,7 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
     <br/><i>Urban road network of Marrakesh.</i>
     </p>
 
-    - *City buildings* :
+    - *City buildings* : this shapefile represents available buildings on OSM. These data are not mandatory for the model since buildings are only used for visualization purposes. 
 
     - *Bus stops network* :
 
