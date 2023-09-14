@@ -55,30 +55,22 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
 **TrafficSignal** : represents a sign that regulates traffic on the road network. A traffic signal may be stop sign where vehicles always stop for a given time, or a traffic light where vehicles stop following a given probability.
 
 **BusLine** : represents two paths of outgoing and return bus stops between a start (departure) and an end (terminus) points. Each bus line is named (*bl_name*) and has the two following characteristics:
-  
   - *bl_interval_time* : indicates the theoretical interval time between buses of the same line.
   - *bl_commercial_speed* : indicates the average speed of buses while considering the constraints of bus stops, traffic lights, and congestion.
 
 **BusVehicle** : represents a vehicle that serves a bus line. The same bus line can be served by multiple vehicles. Each bus vehicle has the following attributes:
-  
-  - *bv_direction* : indicates whether a bus is currently in an outgoing or return direction.
-  
-  - *bv_speed* : indicates the true speed of a moving bus.
-  
+  - *bv_current_direction* : indicates whether a bus is currently in an outgoing or a return direction.
+  - *bv_actual_speed* : indicates the true speed of a moving bus.
   - *bv_max_capacity* : indicates the maximum number of passengers that the bus can take.
-  
-  - *bv_moving* : a boolean to indicate whether a bus is currently moving or not.
+  - *bv_in_move* : a boolean to indicate whether a bus is currently moving or not.
+  - *bv_in_city* : a boolean to indicate whether a bus is currently in the city or in the suburbs.
 
-**BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two different but close bus stops otherwise. The proximity in this model is defined as a 400 m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered.
+**BusConnection** : determines a location where passengers can transfer between two bus lines. This connection may be in the same bus stop if the two bus lines intersect, or in two neighboring bus stops otherwise. The proximity in this model is defined as a 400m circle. The connections are computed to minimize the total journey distance, hence, only the best connections are considered. Each bus connection in the model is characterized buy the directions of connected bus lines (*bc_bus_directions*) and by the distance between connected bus stops (*bc_connection_distance*).
 
 **BusTrip** : represents a trip between an origin and a destination bus stops using one or two bus lines. The following attributes characterize a bus trip:
- 
   - *bt_type* : indicates whether the trip is using one or two bus lines.
-  
   - *bt_bus_directions* : stores the direction (outgoing or return) of each bus used in the trip.
-  
   - *bt_bus_distances* : stores the traveled distances by the buses used in the trip.
-  
   - *bt_walk_distance* : indicates the walk distance between bus stops if the trip includes a bus connection.
 
 ### Process overview and scheduling
