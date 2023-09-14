@@ -27,7 +27,7 @@ The purpose of the model is to simulate public transport in Marrakesh to underst
 The model simulates a day (06:00 - 23:00) of public transport journeys in Marrakesh. The time step represents one minute. Bus vehicles move between bus stops to take and drop off people in outgoing and return journeys between a start point and a terminus. To simulate these dynamics, 11 agents are implemented to represent the city environment and the active agents. The following figure depicts the class diagram of the model.
 
 <p align="center">
-  <img width="800" height="504" alt="MarraSIM class diagram" src="https://github.com/laatabix/MarraSIM/assets/15381143/528ec2fb-b09b-489f-a7fb-abbb90990256">
+  <img width="800" height="504" alt="MarraSIM class diagram" src="assets/class_diagram.png">
 <br/><i>UML Class diagram of the MarraSIM model.</i>
 </p>
 
