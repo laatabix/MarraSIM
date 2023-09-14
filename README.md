@@ -104,17 +104,17 @@ At each time step (each minute), ...
 
 ### Initialization
 
-At initialization, the simulation environment is created based on the shapefiles (in "*/includes/gis/*") representing districts, buildings, PDU zones, road network, traffic signals, and bus stops. Than bus lines, bus connections, individuals, travel plans are created based on data files in "*/includes/csv/*".
+At initialization, the simulation environment is created based on the shapefiles (in "*/includes/gis/*") representing districts, buildings, PDU zones, road network, traffic signals, and bus stops. Then bus lines, bus connections, bus vehicles, individuals, and travel plans are created based on data files in "*/includes/csv/*".
 
 ### Input data
 
 #### Data overview
 
-Data include shapefiles and data on the bus network, traffic, and mobility. These data come from different sources including online databases and websites and official reports.
-  
+Data include shapefiles and data on the bus network, traffic, and mobility. These data come from different sources including online databases (OSM: OpenStreetMap) and websites (ALSA Company - Marrakesh) and official reports (PDU: Plan de Déplacements Urbains 2009).
+
   - **Shapefiles** : serve to build the simulation environment (infrastructure and visual aspects). The included shapefiles are:
 
-    - *Administrative boundaries of districts* : the official zoning of the city. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara.
+     - *Administrative boundaries of districts* : the official zoning of the city. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara.
     <p align="center">
     <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="assets/admin_zones.png">
     <br/><i>Administrative districts of Marrakesh.</i>
