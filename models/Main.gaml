@@ -209,7 +209,7 @@ global {
 				bv_current_bs <- bv_line.bl_outgoing_bs[0];
 				bv_current_bs.bs_current_stopping_buses <+ self;
 				bv_next_stop <- bv_current_bs;
-				bv_direction <- BL_DIRECTION_OUTGOING;
+				bv_current_direction <- BL_DIRECTION_OUTGOING;
 				location <- bv_current_bs.location;
 				bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
 				i_counter <- i_counter + 1;
@@ -218,7 +218,7 @@ global {
 				bv_current_bs <- bv_line.bl_return_bs[0];
 				bv_current_bs.bs_current_stopping_buses <+ self;
 				bv_next_stop <- bv_current_bs;
-				bv_direction <- BL_DIRECTION_RETURN;
+				bv_current_direction <- BL_DIRECTION_RETURN;
 				location <- bv_current_bs.location;
 				bv_stop_wait_time <- 0.0;
 			}		
@@ -337,8 +337,8 @@ global {
 						
 			ask BusLine {
 				list<BusVehicle> bvs <- BusVehicle where (each.bv_line = self);
-				list<BusVehicle> outs <- bvs where (each.bv_direction = BL_DIRECTION_OUTGOING);
-				list<BusVehicle> rets <- bvs where (each.bv_direction = BL_DIRECTION_RETURN);
+				list<BusVehicle> outs <- bvs where (each.bv_current_direction = BL_DIRECTION_OUTGOING);
+				list<BusVehicle> rets <- bvs where (each.bv_current_direction = BL_DIRECTION_RETURN);
 				
 				save '' + cycle + ',' + bl_name + ',' + length(outs) + ',' + length(rets) + ',' +
 					outs sum_of length(each.bv_passengers) + ',' + rets sum_of length(each.bv_passengers) + ',' +

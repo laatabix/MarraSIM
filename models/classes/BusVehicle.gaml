@@ -1,8 +1,9 @@
 /**
 * Name: BusVehicle
 * Description: defines the BusVehicle species and its related constantes, variables, and methods.
-* 				A BusVehicle agent represents one bus.
-* Author: Laatabi
+* 				A BusVehicle agent represents one vehicle that serves a bus line.
+* Authors: Laatabi
+* For the i-Maroc project.
 */
 
 model BusVehicle
@@ -12,17 +13,23 @@ import "Individual.gaml"
 import "BusTrip.gaml"
 
 global {
-	// speed of busses in suburban area
+	
+	// speed of busses in the suburban area
 	float BV_SUBURBAN_SPEED <- 50#km/#hour;
 	// the minimum wait time at bus stops
 	float BV_MIN_WAIT_TIME_BS <- 30#second;
 	// the mininmum time to take or drop off a passenger
 	float BV_TIME_TAKE_DROP_IND <- 5#second;
+	
 }
+
+/*******************************/
+/**** BusVehicle Species ******/
+/*****************************/
 
 species BusVehicle skills: [moving] {
 	BusLine bv_line;
-	int bv_direction;
+	int bv_current_direction;
 	BusStop bv_current_bs;
 	BusStop bv_next_stop;
 	float bv_actual_speed;
@@ -30,11 +37,14 @@ species BusVehicle skills: [moving] {
 	bool bv_in_city <- true;
 	int bv_max_capacity <- 100;
 	bool bv_in_move <- false;
-	geometry shape <- rectangle(50#meter,25#meter);
-	TrafficSignal bv_current_traff_sign <- nil;
+	//geometry shape <- rectangle(50#meter,25#meter);
+	image_file bv_icon <- image_file("../../includes/img/bus.png");
+	
+	TrafficSignal bv_current_traff_sign <- nil; // when the vehicle stops at a traffic signal
 	RoadSegment bv_current_rd_segment <- nil;
 	list<Individual> bv_passengers <- [];
 	
+	// stats
 	float bv_accumulated_traffic_delay <- 0.0;
 	float bv_accumulated_signs_delay <- 0.0;
 	float bv_accumulated_passaging_delay <- 0.0;
@@ -94,7 +104,7 @@ species BusVehicle skills: [moving] {
 					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
 				}
 				if nn > 0 {
-					write world.formatted_time() + bv_line.bl_name  + ' (' + bv_direction + ') is dropping ' + (nn + mm) + ' people at ' + bv_current_bs.bs_name color: #blue;
+					write world.formatted_time() + bv_line.bl_name  + ' (' + bv_current_direction + ') is dropping ' + (nn + mm) + ' people at ' + bv_current_bs.bs_name color: #blue;
 					if mm > 0 {
 						write '  -> Among them, ' + mm + " are connecting" color: #darkblue;
 					}
@@ -109,7 +119,7 @@ species BusVehicle skills: [moving] {
 									each.ind_moving) accumulate each.bs_waiting_people;
 									
 					waiting_inds <- (waiting_inds where (/*each.ind_current_plan_index = 0 and*/!empty(each.ind_available_bt
-							where (each.bt_bus_line = bv_line and each.bt_bus_direction = bv_direction))))
+							where (each.bt_bus_line = bv_line and each.bt_bus_direction = bv_current_direction))))
 						;/*+
 							(waiting_inds where (each.ind_current_plan_index = 1 and !empty(each.ind_bt_plan where
 						(each.bt_type= BUS_TRIP_2ND_LINE and each.bt_bus_line = bv_line and each.bt_bus_direction = bv_direction))));
@@ -120,7 +130,7 @@ species BusVehicle skills: [moving] {
 							
 							// first, retrieve individuals with no 1L trips on this bus (the bus can only transfer them)
 							list<Individual> indivs <- (waiting_inds where (each.ind_current_plan_index = 0 and
-								empty(each.ind_available_bt where (each.bt_bus_line = bv_line and each.bt_bus_direction = bv_direction
+								empty(each.ind_available_bt where (each.bt_bus_line = bv_line and each.bt_bus_direction = bv_current_direction
 								and each.bt_type = BUS_TRIP_SINGLE_LINE))));
 							
 							// see if these individuals can do a 1L-trip on another bus
@@ -139,18 +149,18 @@ species BusVehicle skills: [moving] {
 								// prefer 1L trips
 								if !transfer_on and int(time - ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS {
 									ind_current_bt <- ind_available_bt where (each.bt_bus_line = myself.bv_line
-										and each.bt_bus_direction = myself.bv_direction and each.bt_type = BUS_TRIP_SINGLE_LINE)
+										and each.bt_bus_direction = myself.bv_current_direction and each.bt_type = BUS_TRIP_SINGLE_LINE)
 										with_min_of (each.bt_bus_distance + each.bt_walk_distance);
 								}
 								if ind_current_bt = nil {
 									ind_current_bt <- ind_available_bt where (each.bt_bus_line = myself.bv_line
-											and each.bt_bus_direction = myself.bv_direction)
+											and each.bt_bus_direction = myself.bv_current_direction)
 												with_min_of (each.bt_bus_distance + each.bt_walk_distance);	
 								}	
 							} else {
 								// the individual is making a second ride
 								ind_current_bt <- ind_available_bt where (each.bt_type= BUS_TRIP_2ND_LINE and 
-										each.bt_bus_line = myself.bv_line and each.bt_bus_direction = myself.bv_direction)
+										each.bt_bus_line = myself.bv_line and each.bt_bus_direction = myself.bv_current_direction)
 											with_min_of (each.bt_bus_distance + each.bt_walk_distance);	
 							}
 							if ind_current_bt !=nil {
@@ -170,22 +180,22 @@ species BusVehicle skills: [moving] {
 						}
 					}
 					if nn > 0 {
-						write world.formatted_time() + bv_line.bl_name  + ' (' + bv_direction + ') is taking ' + nn + ' people at ' + bv_current_bs.bs_name color: #darkgreen;
+						write world.formatted_time() + bv_line.bl_name  + ' (' + bv_current_direction + ') is taking ' + nn + ' people at ' + bv_current_bs.bs_name color: #darkgreen;
 						write '  -> Passengers : ' + length(bv_passengers) + " people are on board" color: #darkorange;
 					}	
 				}
 			}
 			// to know the next stop
-			if bv_direction = BL_DIRECTION_OUTGOING { // outgoing
+			if bv_current_direction = BL_DIRECTION_OUTGOING { // outgoing
 				if bv_current_bs = last(bv_line.bl_outgoing_bs) { // last stop
-					bv_direction <- BL_DIRECTION_RETURN;
+					bv_current_direction <- BL_DIRECTION_RETURN;
 					bv_next_stop <- bv_line.bl_return_bs[0];
 				} else {
 					bv_next_stop <- bv_line.bl_outgoing_bs[(bv_line.bl_outgoing_bs index_of bv_next_stop) + 1];
 				}
 			} else { // return
 				if bv_current_bs = last(bv_line.bl_return_bs) { // last stop
-					bv_direction <- BL_DIRECTION_OUTGOING;
+					bv_current_direction <- BL_DIRECTION_OUTGOING;
 					bv_next_stop <- bv_line.bl_outgoing_bs[0];
 				} else {
 					bv_next_stop <- bv_line.bl_return_bs[(bv_line.bl_return_bs index_of bv_next_stop) + 1];
@@ -233,7 +243,11 @@ species BusVehicle skills: [moving] {
 		do goto on: road_network target: bv_next_stop speed: bv_actual_speed;
 	}
 	
+	//
 	aspect default {
-		draw shape color: rgb("#feb29a") border: #black rotate: heading;
+		draw bv_icon size: {50#meter,25#meter} rotate: heading;
+		//draw "" + bv_line.bl_name anchor: #center font: font("Calibri", 10, #bold) color: #black;
 	}
 }
+
+/*** end of species definition ***/

@@ -15,15 +15,15 @@ global {
 	int BL_DIRECTION_OUTGOING <- 1;
 	int BL_DIRECTION_RETURN <- 2;
 	// colors to color bus lines when displayed
-	list<rgb> BL_COLORS <- [#darkblue,#darkcyan,#darkgoldenrod,#darkgray,#darkkhaki,#darkmagenta,#darkolivegreen,
-				#darkorchid,#darksalmon,#darkseagreen,#darkslateblue,#darkslategray,#darkturquoise,#darkviolet];
+	list<rgb> BL_COLORS <- [#darkblue,#darkcyan,#darkgoldenrod,#darkgray,#darkkhaki,#darkmagenta,#darkolivegreen,#darkorchid,
+								#darksalmon,#darkseagreen,#darkslateblue,#darkslategray,#darkturquoise,#darkviolet];
 	// display or not buslines (instead of roads with traffic levels)
 	bool show_buslines <- false;
 	//font LFONT0 <- font("Arial", 5, #bold);
 }
 
 /*******************************/
-/**** BusLine Species ***/
+/******* BusLine Species ******/
 /*****************************/
 
 species BusLine schedules: [] parallel: true {
@@ -39,7 +39,7 @@ species BusLine schedules: [] parallel: true {
 	rgb bl_color <- one_of(BL_COLORS);
 	geometry bl_shape;
 	
-	// create a bus connection from passed arguments
+	// create a bus connection with the bus line passed in arguments
 	action create_bc (BusStop bs1, int dir1, BusLine bl2, BusStop bs2, int dir2, int cd) {
 		create BusConnection {
 			bc_bus_lines <- [myself, bl2];
