@@ -116,13 +116,13 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 
     - *Administrative boundaries of districts* : the official zoning of the city. In Marrakesh, there are six districts: Médina, Guéliz, Annakhil, Méchouar-Kasbah, Sidi Youssef Ben Ali (SYBA), and Ménara.
     <p align="center">
-    <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143/a626c016-c7d0-4db0-bb2e-b2ae8e0defcb">
+    <img width="440" height="355" alt="Administrative zoning of Marrakesh" src="assets/admin_zones.png">
     <br/><i>Administrative districts of Marrakesh.</i>
     </p>
     
     - *PDU zoning* : The PDU (Plan de Déplacements Urbains) is a big study that was conducted in 2009 to describe and evaluate the urban mobility and population movement in Marrakesh. The study divided the city into 27 zones based on multiple criteria of geography and urban fabric. We use this zoning since all the data presented in the PDU document is based on it.
       <p align="center">
-      <img width="440" height="355" alt="PDU zoning of Marrakesh" src="https://github.com/laatabix/MarraSIM/assets/15381143        /41a43e8f-a5eb-4161-b4c5-e1b77ea601e5">
+      <img width="440" height="355" alt="PDU zoning of Marrakesh" src="assets/pdu_zones.png">
       <br/><i>The 27 PDU zones of Marrakesh.</i>
       </p>
 
