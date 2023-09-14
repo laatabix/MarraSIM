@@ -110,7 +110,7 @@ At initialization, the simulation environment is created based on the shapefiles
 
 #### Data overview
 
-Data include shapefiles and data on the bus network, traffic, and mobility. These data come from different sources including online databases (OSM: OpenStreetMap) and websites (ALSA Company - Marrakesh) and official reports (PDU: Plan de Déplacements Urbains 2009).
+Data include shapefiles and data on the bus network, traffic, and mobility. These data come from different sources including online databases (OSM: OpenStreetMap) and websites (ALSA: public transport company in Marrakesh) and official reports (PDU: Plan de Déplacements Urbains 2009).
 
   - **Shapefiles** : serve to build the simulation environment (infrastructure and visual aspects). The included shapefiles are:
 
@@ -134,9 +134,9 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 
     - *City buildings* : this shapefile represents available buildings on OSM. These data are not mandatory for the model since buildings are only used for visualization purposes. 
 
-    - *Bus stops network* :
+    - *Bus stops network* : bus stops data was extracted from the public transport company website as a JSON file that was converted to a shapefile. These data were incomplete and erroneous and were manually treated to complete missing bus stops and correct erroneous data. 
 
-    - *Traffic signals network* :
+    - *Traffic signals network* : the shapefile of traffic signals was downloaded from OSM and filtered to include only traffic lights and stop signs. 
   
   - **Traffic data** :
   - **Mobility data** :
