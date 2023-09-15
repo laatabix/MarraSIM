@@ -65,11 +65,11 @@ species BusVehicle skills: [moving] {
 		bv_current_rd_segment <- RoadSegment(current_edge);
 		
 		// the bus has reached its next bus stop
-		if location = bv_next_stop.location {
+		if location overlaps (10#meter around bv_next_stop.location) {
 		 	bv_stop_wait_time <- BV_MIN_WAIT_TIME_BS;
 		 	bv_in_move <- false;
 			bv_current_bs <- bv_next_stop;
-			bv_current_bs.bs_current_stopping_buses <+ self;
+			bv_current_bs.bs_current_stopping_buses <+ self;			
 			
 			// the bus is in a bus stop inside the city
 			if bv_in_city {
@@ -214,7 +214,7 @@ species BusVehicle skills: [moving] {
 					TrafficSignal ts <- bv_current_rd_segment.rs_traffic_signals closest_to self;
 					float stop_prob <- ts.ts_type = TRAFFIC_STOP_SIGN ? 1 : TS_PROBA_STOP_TRAFF_LIGHT;
 					// if th stopping condition is true (flip) and the bus is 10 meters around a traffic signal
-					if flip (stop_prob) and 10#meter around (ts) overlaps location {
+					if location overlaps (10#meter around (ts)) and flip (stop_prob)  {
 						bv_stop_wait_time <- TS_STOP_WAIT_TIME;
 						bv_accumulated_signs_delay <- bv_accumulated_signs_delay + TS_STOP_WAIT_TIME;
 						bv_current_traff_sign <- ts;

@@ -40,9 +40,8 @@ species BusStop schedules: [] parallel: true{
 		try {
 			return int(path_between(road_network, self, bs2).shape.perimeter);
 		} catch {
-			write "Exception while computing distance between " + self.bs_name +" (" + self.bs_zone.pduz_code+") and " +
-					bs2.bs_name +" (" + bs2.bs_zone.pduz_code+")" color: #red;
-			return self.location = bs2.location ? 0 : #max_int;
+			//write "Exception while computing distance between " + self.bs_name + " and " + bs2.bs_name color: #red;
+			return self.location = bs2.location ? 0 : int(self distance_to bs2);
 		}
 	}
 	

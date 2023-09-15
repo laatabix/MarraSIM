@@ -81,30 +81,50 @@ global {
 		write "Creating bus connections ...";
 		loop i from: 0 to: length(BusLine) - 2 {
 			loop j from: i+1 to: length(BusLine) - 1 {
-				list<list<BusStop>> mybss <- [BusLine[i].bl_outgoing_bs,BusLine[i].bl_return_bs,
-												BusLine[j].bl_outgoing_bs,BusLine[j].bl_return_bs];
-				list<int> mydirs <- [BL_DIRECTION_OUTGOING,BL_DIRECTION_RETURN,BL_DIRECTION_OUTGOING,BL_DIRECTION_RETURN];								
 				
-				loop lisa over: [[0,2],[0,3],[1,2],[1,3]] {
-					list<BusStop> inter_bss <- mybss[lisa[0]] where !empty(each.bs_neighbors inter mybss[lisa[1]]);		
-					if !empty(inter_bss) {
-						list<BusStop> bs_connections <- [inter_bss[0]];
-						int last_con_idx <- mybss[lisa[0]] index_of inter_bss[0];
-						loop bs0 over: inter_bss - inter_bss[0] {
-							int idx <- mybss[lisa[0]] index_of bs0;
-							if idx != last_con_idx + 1 {
-								bs_connections <+ bs0;
+				// list of directions of the two bus lines : {out1,out2},{out1,ret2},{ret1,out2},{ret1,ret2}
+				list<list<int>> list_dirs <- [[BL_DIRECTION_OUTGOING,BL_DIRECTION_OUTGOING],
+											[BL_DIRECTION_OUTGOING,BL_DIRECTION_RETURN],
+											[BL_DIRECTION_RETURN,BL_DIRECTION_OUTGOING],
+											[BL_DIRECTION_RETURN,BL_DIRECTION_RETURN]];
+				
+				// list of intersecting bus stops between each pair of directions
+				list<list<BusStop>> list_inter_bss <- [BusLine[i].bl_outgoing_bs where
+									!empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs)];
+				list_inter_bss <+ BusLine[i].bl_outgoing_bs where !empty(each.bs_neighbors inter BusLine[j].bl_return_bs);
+				list_inter_bss <+ BusLine[i].bl_return_bs where !empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs);
+				list_inter_bss <+ BusLine[i].bl_return_bs where !empty(each.bs_neighbors inter BusLine[j].bl_return_bs);
+
+				loop idx from: 0 to: 3 {
+					// if there are intersecting bus stops
+					if !empty(list_inter_bss[idx]) {
+						list<BusStop> current_bss1 <- list_dirs[idx][0] = BL_DIRECTION_OUTGOING ? 
+											BusLine[i].bl_outgoing_bs : BusLine[i].bl_return_bs;
+						list<BusStop> current_bss2 <- list_dirs[idx][1] = BL_DIRECTION_OUTGOING ? 
+											BusLine[j].bl_outgoing_bs : BusLine[j].bl_return_bs;
+						
+						// take the first intersection as a potential connection
+						list<BusStop> bs_to_connect <- [first(list_inter_bss[idx])];
+						int last_con_id <- current_bss1 index_of bs_to_connect[0];
+							
+						loop bs0 over: (list_inter_bss[idx] - first(list_inter_bss[idx])) {
+							int tx <- current_bss1 index_of bs0;
+							// do not create a connection for consecutive bus stops
+							if tx != last_con_id + 1 {
+								bs_to_connect <+ bs0;
 							}
-							last_con_idx <- idx;
+							last_con_id <- tx;
 						}
-						loop bs0 over: bs_connections {
-							if !((mydirs[lisa[0]] = BL_DIRECTION_OUTGOING and bs0 = BusLine[i].bl_outgoing_bs[0]) or
-								(mydirs[lisa[0]] = BL_DIRECTION_RETURN and bs0 = BusLine[i].bl_return_bs[0])) {
-								ask BusLine[i] {
-									BusStop bs1 <- mybss[lisa[1]] contains bs0 ? bs0 : mybss[lisa[1]] closest_to bs0;
-									do create_bc(bs0, mydirs[lisa[0]], BusLine[j], bs1, mydirs[lisa[1]],-1);
-								}		
-							}
+						
+						loop bs0 over: bs_to_connect {
+							ask BusLine[i] {
+								// get the best (closest) pair if bus stops for this connection
+								BusStop bs1 <- current_bss2 contains bs0 ? bs0 :current_bss2 closest_to bs0;
+								// closer connection ?
+								bs0 <- current_bss1 contains bs1 ? bs1 :current_bss1 closest_to bs1;
+								//bs1 <- current_bss2 contains bs0 ? bs0 :current_bss2 closest_to bs0;
+								do create_bc(bs0, list_dirs[idx][0], BusLine[j], bs1, list_dirs[idx][1],-1);
+							}		
 						}
 					}
 				}
@@ -113,18 +133,42 @@ global {
 		
 		write "Optimizing bus connections... ";
 		ask BusConnection {
-			BusStop bs <- bc_bus_lines[0].next_bs(bc_bus_directions[0],bc_bus_stops[0]);
-			if bs != nil {
+			BusStop bs_next <- bc_bus_lines[0].next_bs(bc_bus_directions[0],bc_bus_stops[0]);
+			if bs_next != nil {
 				// if the connection is better at the next stop, change to the next stop
-				int dd <- bs.dist_to_bs(bc_bus_stops[1]);
+				int dd <- bs_next.dist_to_bs(bc_bus_stops[1]);
 				if dd < bc_connection_distance  {
-					bc_bus_stops[0] <- bs;
+					bc_bus_stops[0] <- bs_next;
+					bc_connection_distance <- dd;
+				}
+			}
+			BusStop bs_prev <- bc_bus_lines[0].previous_bs(bc_bus_directions[0],bc_bus_stops[0]);
+			if bs_prev != nil {
+				int dd <- bs_prev.dist_to_bs(bc_bus_stops[1]);
+				if dd < bc_connection_distance  {
+					bc_bus_stops[0] <- bs_prev;
+					bc_connection_distance <- dd;
+				}
+			}
+			bs_next <- bc_bus_lines[1].next_bs(bc_bus_directions[1],bc_bus_stops[1]);
+			if bs_next != nil {
+				int dd <- bs_next.dist_to_bs(bc_bus_stops[0]);
+				if dd < bc_connection_distance  {
+					bc_bus_stops[1] <- bs_next;
+					bc_connection_distance <- dd;
+				}
+			}
+			bs_prev <- bc_bus_lines[1].previous_bs(bc_bus_directions[1],bc_bus_stops[1]);
+			if bs_prev != nil {
+				int dd <- bs_prev.dist_to_bs(bc_bus_stops[0]);
+				if dd < bc_connection_distance  {
+					bc_bus_stops[1] <- bs_prev;
 					bc_connection_distance <- dd;
 				}
 			}
 		}
 		write "Number of created bus connections: " + length(BusConnection);
-		
+
 		write "Saving bus connections to a text file ...";
 		bool dl <- delete_file("../../includes/csv/bus_connections.csv");
 		save "bl1,bl2,bs1,bs2,dir1,dir2,condist" format: 'text' rewrite: true to: "../../includes/csv/bus_connections.text";

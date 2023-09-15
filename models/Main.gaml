@@ -33,7 +33,7 @@ global {
 								0.100,0.100,0.025,0.025,0.025,0.050,0.100,0.050,0.050,0.050,0.025,0.025];// [12:00 ->  23:00]
 	
 	// simulation parameters
-	float step <- 1#minute; // defining one simulation step as one minute
+	float step <- 10#second; // defining one simulation step as X seconds
 	bool save_data_on <- false; // whether to save simulation data (to /results) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
@@ -113,6 +113,7 @@ global {
 			string bus_line_name <- dataMatrix[0,i];
 			// create the bus line if it does not exist yet
 			BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
+			
 			if current_bl = nil {
 				create BusLine returns: my_busline { bl_name <- bus_line_name; }
 				current_bl <- my_busline[0];
