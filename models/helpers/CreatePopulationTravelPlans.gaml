@@ -170,7 +170,7 @@ global {
 		bool dl <- delete_file("../../includes/csv/populations.csv");
 		dl <- delete_file("../../includes/csv/travel_plans.csv");
 		save "ind,ozone,dzone,obs,dbs" format: 'text' rewrite: true to: "../../includes/csv/populations.text";
-		save "ind,type,start,bl1,bs1,dir1,dist1,bl2,bs2,dir2,dist2,walk" format: 'text' rewrite: true to: "../../includes/csv/travel_plans.text";
+		save "ind,type,startbs,bl,endbs,dir,dist,walk" format: 'text' rewrite: true to: "../../includes/csv/travel_plans.text";
 		
 		ask Individual {
 			save '' + ind_id + ',' + ind_origin_zone.pduz_code + ',' + ind_destin_zone.pduz_code + ',' + 

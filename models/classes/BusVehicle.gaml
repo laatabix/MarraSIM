@@ -89,15 +89,15 @@ species BusVehicle skills: [moving] {
 						unsaved_arrivals <+ self;
 					} 
 					else { // the passenger is making a connection (transfert)
-						//if myself.bv_current_bs != ind_actual_bt.bt_end_bs {
-							//write "ERROR in connecting at " + myself.bv_current_bs.bs_name + " by " + myself.bv_line.bl_name color:#red;
-						//} else {
+						if myself.bv_current_bs != ind_current_bt.bt_end_bs {
+							write "ERROR in connecting at " + myself.bv_current_bs.bs_name + " by " + myself.bv_line.bl_name color:#red;
+						} else {
 						ind_waiting_bs <- myself.bv_current_bs;
 						ind_waiting_bs.bs_waiting_people <+ self;
 						ind_current_plan_index <- ind_current_plan_index + 1;
 						ind_waiting_times[ind_current_plan_index] <- int(time);
 						mm <- mm + 1;
-						//}
+						}
 					}
 					myself.bv_passengers >- self;					
 					myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_DROP_IND;
@@ -117,13 +117,17 @@ species BusVehicle skills: [moving] {
 					// list of possible waiting passengers to take
 					list<Individual> waiting_inds <- bv_current_bs.bs_neighbors where !empty(each.bs_waiting_people where
 									each.ind_moving) accumulate each.bs_waiting_people;
-									
-					waiting_inds <- (waiting_inds where (/*each.ind_current_plan_index = 0 and*/!empty(each.ind_available_bt
-							where (each.bt_bus_line = bv_line and each.bt_bus_direction = bv_current_direction))))
-						;/*+
-							(waiting_inds where (each.ind_current_plan_index = 1 and !empty(each.ind_bt_plan where
-						(each.bt_type= BUS_TRIP_2ND_LINE and each.bt_bus_line = bv_line and each.bt_bus_direction = bv_direction))));
-						*/
+
+					if !empty (waiting_inds) {
+						waiting_inds <- waiting_inds where( (each.ind_current_plan_index = 0 and
+										!empty(each.ind_available_bt where	(each.bt_bus_line = bv_line and
+										each.bt_bus_direction = bv_current_direction and each.bt_type != BUS_TRIP_2ND_LINE))))
+									+
+									 waiting_inds where( (each.ind_current_plan_index = 1 and
+									 	!empty(each.ind_available_bt where (each.bt_bus_line = bv_line and
+									 	each.bt_bus_direction = bv_current_direction and each.bt_type = BUS_TRIP_2ND_LINE))));	
+					}
+					
 					if !empty (waiting_inds) {
 						// if transfer is off, remove individuals with 2L-trip that can still wait for a 1L-trip
 						if !transfer_on {
