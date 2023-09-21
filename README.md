@@ -74,7 +74,11 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *bt_walk_distance* : indicates the walk distance between bus stops used during the trip. This includes the walking distances to: 1) reach the start bus stop; 2) connect between transfer bus stops if the journey includes a connection; 3) and to reach the final destination from the end bus stop.  
 
 ### Process overview and scheduling
-At each time step (each minute), ...
+At each time step (each minute), bus vehicles move between bus stops to take or drop off passengers. Bus vehicles may be delayed by stopping at traffic signals (*TS_STOP_WAIT_TIME*), by taking/dropping of passengers at bus stops (*BV_TIME_TAKE_DROP_IND x number of passengers*), or by the traffic congestion at congested roads (orange/red/darkred). The delay of traffic congestion is computed at each time step as follows : *( (bv_commercial_speed - bv_acutal_speed) / bv_commercial_speed ) x timestep*.
+
+Each 10 minutes, a percentage (depending on the current affluence) of new passengers is distributed over bus stops to wait for a bus. Each passenger waits at the bus stop and takes the first bus that can transport him to his destination. If the transfer is off, passengers prioritize busses that can do a 1-line trip to the destination, and wait at least 1 hour before taking a 2-lines bus. If transfer is on, all passengers take the first relevant bus.
+
+Each hour, the state of roads is updated to consider the current traffic level. Affluence of passengers is also updated.
 
 ## Design concepts
   
