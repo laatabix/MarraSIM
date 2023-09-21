@@ -34,6 +34,11 @@ species PDUZone schedules: [] parallel: true {
 	rgb pduz_wp_col <- #white;
 	rgb pduz_wt_col <- #white;
 	
+	// stats
+	float pduz_accumulated_traffic_delay <- 0.0;
+	float pduz_accumulated_signs_delay <- 0.0;
+	float pduz_accumulated_passaging_delay <- 0.0;
+	
 	list<int> update_color {
 		
 		// compute waiting people

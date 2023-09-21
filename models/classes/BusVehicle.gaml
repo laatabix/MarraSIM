@@ -102,6 +102,10 @@ species BusVehicle skills: [moving] {
 					myself.bv_passengers >- self;					
 					myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_DROP_IND;
 					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+					if myself.bv_current_bs.bs_zone != nil {
+						myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay <- 
+								myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+					}
 				}
 				if nn > 0 {
 					write world.formatted_time() + bv_line.bl_name  + ' (' + bv_current_direction + ') is dropping ' + (nn + mm) + ' people at ' + bv_current_bs.bs_name color: #blue;
@@ -178,6 +182,10 @@ species BusVehicle skills: [moving] {
 								}
 								myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_DROP_IND;
 								myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+								if myself.bv_current_bs.bs_zone != nil {
+									myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay <- 
+											myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+								}
 							} else {
 								write "ERROR in finding bus trip !" color: #red;
 							}	
@@ -217,6 +225,10 @@ species BusVehicle skills: [moving] {
 					if location overlaps (10#meter around (ts)) and flip (stop_prob)  {
 						bv_stop_wait_time <- TS_STOP_WAIT_TIME;
 						bv_accumulated_signs_delay <- bv_accumulated_signs_delay + TS_STOP_WAIT_TIME;
+						if bv_current_rd_segment.rs_zone != nil {
+							bv_current_rd_segment.rs_zone.pduz_accumulated_signs_delay <- 
+									bv_current_rd_segment.rs_zone.pduz_accumulated_signs_delay + TS_STOP_WAIT_TIME;
+						}
 						bv_current_traff_sign <- ts;
 					 	bv_in_move <- false;
 					 	return;
@@ -232,9 +244,14 @@ species BusVehicle skills: [moving] {
 			if bv_in_city {
 				if traffic_on {
 					bv_actual_speed <- bv_line.bl_com_speed / bv_current_rd_segment.rs_traffic_level;
-					bv_accumulated_traffic_delay <- bv_accumulated_traffic_delay + 
-								(((bv_line.bl_com_speed - bv_actual_speed)/bv_line.bl_com_speed)*step);
-	
+					if bv_actual_speed != bv_line.bl_com_speed {
+						float traff_del <- ((bv_line.bl_com_speed - bv_actual_speed)/bv_line.bl_com_speed)*step;
+						bv_accumulated_traffic_delay <- bv_accumulated_traffic_delay + traff_del;
+						if bv_current_rd_segment.rs_zone != nil {
+							bv_current_rd_segment.rs_zone.pduz_accumulated_traffic_delay <- 
+									bv_current_rd_segment.rs_zone.pduz_accumulated_traffic_delay + traff_del;
+						}
+					}
 				} else {
 					bv_actual_speed <- bv_line.bl_com_speed;
 				}

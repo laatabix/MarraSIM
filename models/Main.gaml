@@ -68,9 +68,12 @@ global {
 			}
 		} else {
 			sim_id <- machine_time;
-			save "cycle,pduzone,w_people,w_time" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/pduzones.csv";
-			save "cycle,waiting1st,waiting2nd,onboard,arrived" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/individuals.csv";
-			save "cycle,tt1l,tt2l,wt1l,wt2l" format: 'text' rewrite: true to: "../results/data_"+sim_id+"/times.csv";
+			save "cycle,pduzone,w_people,w_time,traf_del,pass_del,sign_del" 
+					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/pduzones.csv";
+			save "cycle,waiting1st,waiting2nd,onboard,arrived" 
+					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/individuals.csv";
+			save "cycle,tt1l,tt2l,wt1l,wt2l"
+					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/times.csv";
 			save "cycle,bl,outs,rets,outs_board,rets_board,outs_traff,rets_traff,outs_sign,rets_sign,outs_psg,rets_psg"
 					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/buslines.csv";
 			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk"
@@ -82,7 +85,15 @@ global {
 		create District from: marrakesh_districts with: [dist_code::int(get("ID")), dist_name::get("NAME")];
 		create Building from: marrakesh_buildings;
 		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
-		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))];
+		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))]{
+			if rs_in_city {
+				rs_zone <- first(PDUZone overlapping self);
+				// if its in the city and did not overlap a PDU zone, affect the closest one
+				if rs_zone = nil {
+					rs_zone <- PDUZone closest_to self;
+				}	
+			}
+		}
 		road_network <- as_edge_graph(list(RoadSegment));
 				
 		// creating traffic stops and traffic lights
@@ -253,7 +264,7 @@ global {
 				bt_bus_direction <- int(dataMatrix[5,i]);
 				bt_bus_distance <- int(dataMatrix[6,i]);
 				bt_walk_distance <- int(dataMatrix[7,i]);
-				indiv_x.ind_available_bt <+ self; 	
+				indiv_x.ind_available_bt <+ self;	
 			}
 		}
 		
@@ -315,10 +326,11 @@ global {
 		// update colors of zones
 		write "Updating the colors of PDU zones ..";
 		ask PDUZone {
-			list<int> indicators <- update_color();
+			list<int> indicators <- update_color(); // waiting times and people
 			if save_data_on {
-				save '' + cycle + ',' + pduz_code + ',' + indicators[0] + ',' + indicators[1]
-											format: "text" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
+				save '' + cycle + ',' + pduz_code + ',' + indicators[0] + ',' + indicators[1] + ',' +
+					pduz_accumulated_traffic_delay + ',' + pduz_accumulated_passaging_delay + ',' + pduz_accumulated_signs_delay 
+									format: "text" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
 			}
 		}
 		

@@ -34,6 +34,7 @@ global {
 species RoadSegment schedules: [] parallel: true {
 	int rs_id;
 	rgb rs_col <- #green;
+	PDUZone rs_zone <- nil;
 	int rs_traffic_level <- G_TRAFF_LEVEL_GREEN; // current traffic level of the road segment
 	bool rs_in_city <- true; // is it urban or suburban (only city roads are considered in Google Traffic data.
 						    // Subrban roads have always a normal "green" traffic level).
