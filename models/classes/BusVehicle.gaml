@@ -18,8 +18,10 @@ global {
 	float BV_SUBURBAN_SPEED <- 50#km/#hour;
 	// the minimum wait time at bus stops
 	float BV_MIN_WAIT_TIME_BS <- 30#second;
-	// the mininmum time to take or drop off a passenger
-	float BV_TIME_TAKE_DROP_IND <- 5#second;
+	// the mininmum time to take a passenger
+	float BV_TIME_TAKE_IND <- 10#second;
+	// the mininmum time to drop off a passenger
+	float BV_TIME_DROP_IND <- 4#second;
 	
 }
 
@@ -100,11 +102,11 @@ species BusVehicle skills: [moving] {
 						}
 					}
 					myself.bv_passengers >- self;					
-					myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_DROP_IND;
-					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+					myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_DROP_IND;
+					myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_DROP_IND;
 					if myself.bv_current_bs.bs_zone != nil {
 						myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay <- 
-								myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+								myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_DROP_IND;
 					}
 				}
 				if nn > 0 {
@@ -180,11 +182,11 @@ species BusVehicle skills: [moving] {
 								if ind_current_plan_index = 0 {
 									ind_trip_time <- int(time);	
 								}
-								myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_DROP_IND;
-								myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+								myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_IND;
+								myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_IND;
 								if myself.bv_current_bs.bs_zone != nil {
 									myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay <- 
-											myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_DROP_IND;
+											myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_IND;
 								}
 							} else {
 								write "ERROR in finding bus trip !" color: #red;

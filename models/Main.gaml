@@ -277,7 +277,7 @@ global {
 	/*******************************************************************************************************************************/
 	/*******************************************************************************************************************************/
 	
-	int Nminutes <- 10; // Nminutes has to be a divider of 1hour to allow updating traffic levels (done by hour)
+	int Nminutes <- 10; // Nminutes has to be a divider of 1hour to allow updating traffic levels (a file for each hour)
 	
 	// update road traffic and/or generate travellers each X minutes
 	reflex going_on when: int(time) mod int(Nminutes#minute) = 0 {

@@ -18,7 +18,7 @@ global {}
 species Building schedules: []{
 	
 	aspect default {
-		draw shape color: #gray border: #darkgray;
+		draw shape color: rgb("#FFCC99") border: #darkgray;
 	}
 	
 }
