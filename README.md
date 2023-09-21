@@ -19,8 +19,10 @@ We present here **MarraSIM**, our agent-based model that simulates the public tr
 ## Overview
 
 ### Purpose
-
 The purpose of the model is to simulate public transport in Marrakesh to understand the complex interactions between the transport demand, the bus network, and the Grand Taxis fleet. Using realistic data representing traffic flow, OD trips, and public transport fleet, the model allows testing different strategies that may reduce waiting and travel times, increase public transport efficiency, and limit the environmental burden of road traffic in Marrakesh.
+
+### Theoretical and empirical background
+Agents in MarraSIM represent principal concepts involved in the public transport and road traffic.
 
 ### Entities, state variables, and scales
 
@@ -80,27 +82,24 @@ Each 10 minutes, a percentage (depending on the current affluence) of new passen
 
 Each hour, the state of roads is updated to consider the current traffic level. Affluence of passengers is also updated.
 
-## Design concepts
-  
-  1- *Theoretical and empirical background* : agents in MarraSIM represent principal concepts involved in the public transport and road traffic.
-  
-  2- *Individual decision-making* : 
+## Design concepts  
+  1- *Individual decision-making* : 
 
-  3- *Learning* : in the current version of the model, agents do not perform any learning mechanism.
+  2- *Learning* : in the current version of the model, agents do not perform any learning mechanism.
 
-  4- *Individual sensing* :
+  3- *Individual sensing* :
 
-  5- *Individual prediction* : in the current version of the model, agents do not make any predictions.
+  4- *Individual prediction* : in the current version of the model, agents do not make any predictions.
 
-  6- *Interaction* :
+  5- *Interaction* :
 
-  7- *Collectives* :
+  6- *Collectives* :
 
-  8- *Heterogeneity* :
+  7- *Heterogeneity* :
 
-  9- *Stochasticity* :
+  8- *Stochasticity* :
 
-  10- *Observation* : 
+  9- *Observation* : 
 
 ## Details
 
