@@ -22,7 +22,7 @@ We present here **MarraSIM**, our agent-based model that simulates the public tr
 The model's purpose is to simulate public transport in Marrakesh in order to understand the complex interactions between transport demand, the bus network, and the Grand Taxis fleet. By utilizing realistic data that reflects traffic flow, origin-destination (OD) trips, and the public transport fleet, the model enables the testing of various strategies aimed at reducing waiting and travel times, enhancing public transport efficiency, and mitigating the environmental impact of road traffic in Marrakesh.
 
 ### Theoretical and empirical background
-The model includes principal concepts and dynamics involved in the public transport and road traffic. We model a fleet of bus vehicles serving multiple bus lines to transport individuals between bus stops belonging to different zones in the city. A trip refers to using a bus to travel between two bus stops with no transfers. Individuals can reach their destination through journeys of one or two trips.
+The model includes principal concepts and dynamics involved in the public transport and road traffic. We model a fleet of bus vehicles serving multiple bus lines to transport individuals between bus stops belonging to different zones in the city. A trip refers to using a bus to travel between two bus stops with no transfers. Individuals can reach their destination through journeys of one or two trips. When free transfert is not allowed, passengers prioritize journeys of single trips to minimize their travel cost.
 
 ### Entities, state variables, and scales
 
