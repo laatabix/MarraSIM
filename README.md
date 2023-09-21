@@ -1,7 +1,7 @@
 # I-Maroc Project
 
 <p align="center">
-  <img width="600" height="150" alt="IMAROC header" src="https://github.com/laatabix/MarraSIM/assets/15381143/7380bdce-d16f-4a83-93ed-c6e8b3e04ac7">
+  <img width="600" height="150" alt="IMAROC header" src="assets/imaroc_header.png">
 </p>
 
 **I-Maroc** (_**I**ntelligence artificielle/**M**athématiques **A**ppliquées, santé/envi**RO**nnement: simulation pour l’aide à la dé**C**ision_) is a project that aims to design and implement computer simulations for health and the environment through advanced artificial intelligence, data analysis, and mathematical tools. In the **workpackage 3** (*urban and inter-urban mobility*), we focus on modeling various aspects of road traffic in Marrakesh to propose solutions and scenarios aimed at improving mobility and reducing pollution and congestion. Our primary approach involves using artificial intelligence to generate synthetical road traffic data, and using agent-based modeling and simulation to simulate/optimize the public transport network (Bus and Grand Taxis networks). These two axis are intended to minimize pollution associated with road traffic, which will be assessed using the [**MarrakAIR**](https://github.com/gnoubi/MarrakAir) model. 
