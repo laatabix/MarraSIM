@@ -14,15 +14,15 @@ We present here **MarraSIM**, our agent-based model that simulates the public tr
 
 # MarraSIM Model
 
-**MarraSIM** (**Marra**kesh **SIM**ulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and the dynamics of MarraSIM model using the protocol of the [ODD](http://eprints.bournemouth.ac.uk/33918/) (Overview, Design concepts, Details) standard and its extension [ODD+2D](https://www.jasss.org/21/2/9.html) (ODD + Decision + Data).
+**MarraSIM** (**Marra**kesh **SIM**ulator) is an agent-based model of road traffic and public transport in Marrakesh. We describe the structure and dynamics of the MarraSIM model following the protocol of the [ODD](http://eprints.bournemouth.ac.uk/33918/) (Overview, Design concepts, Details) standard and its extension, [ODD+2D](https://www.jasss.org/21/2/9.html) (ODD + Decision + Data).
 
 ## Overview
 
 ### Purpose
-The purpose of the model is to simulate public transport in Marrakesh to understand the complex interactions between the transport demand, the bus network, and the Grand Taxis fleet. Using realistic data representing traffic flow, OD trips, and public transport fleet, the model allows testing different strategies that may reduce waiting and travel times, increase public transport efficiency, and limit the environmental burden of road traffic in Marrakesh.
+The model's purpose is to simulate public transport in Marrakesh in order to understand the complex interactions between transport demand, the bus network, and the Grand Taxis fleet. By utilizing realistic data that reflects traffic flow, origin-destination (OD) trips, and the public transport fleet, the model enables the testing of various strategies aimed at reducing waiting and travel times, enhancing public transport efficiency, and mitigating the environmental impact of road traffic in Marrakesh.
 
 ### Theoretical and empirical background
-Agents in MarraSIM represent principal concepts involved in the public transport and road traffic.
+The model includes principal concepts and dynamics involved in the public transport and road traffic. We model a fleet of bus vehicles serving multiple bus lines to transport individuals between bus stops belonging to different zones in the city. A trip refers to using a bus to travel between two bus stops with no transfers. Individuals can reach their destination through journeys of one or two trips.
 
 ### Entities, state variables, and scales
 
