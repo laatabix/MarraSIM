@@ -76,7 +76,7 @@ The model simulates a day (06:00 - 23:00) of public transport journeys in Marrak
   - *bt_walk_distance* : indicates the walk distance between bus stops used during the trip. This includes the walking distances to: 1) reach the start bus stop; 2) connect between transfer bus stops if the journey includes a connection; 3) and to reach the final destination from the end bus stop.  
 
 ### Process overview and scheduling
-At each time step (each minute), bus vehicles move between bus stops to take or drop off passengers. Bus vehicles may be delayed by stopping at traffic signals (*TS_STOP_WAIT_TIME*), by taking/dropping of passengers at bus stops (*BV_TIME_TAKE_DROP_IND x number of passengers*), or by the traffic congestion at congested roads (orange/red/darkred). The delay of traffic congestion is computed at each time step as follows : *( (bv_commercial_speed - bv_acutal_speed) / bv_commercial_speed ) x timestep*.
+At each time step (each minute), bus vehicles move between bus stops to take or drop off passengers. Bus vehicles may be delayed by stopping at traffic signals (*TS_STOP_WAIT_TIME*), by taking/dropping of passengers at bus stops (*(BV_TIME_TAKE_IND + BV_TIME_DROP_IND) x number of passengers*), or by the traffic congestion at congested roads (orange/red/darkred). The delay of traffic congestion is computed at each time step as follows : *( (bv_commercial_speed - bv_acutal_speed) / bv_commercial_speed ) x timestep*.
 
 Each 10 minutes, a percentage (depending on the current affluence) of new passengers is distributed over bus stops to wait for a bus. Each passenger waits at the bus stop and takes the first bus that can transport him to his destination. If the transfer is off, passengers prioritize busses that can do a 1-line trip to the destination, and wait at least 1 hour before taking a 2-lines bus. If transfer is on, all passengers take the first relevant bus.
 
@@ -151,6 +151,20 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 ### Submodels
 
 # Preliminary results
+
+## Simulated scenarios
+
+### Impact of road congestion
+Controlling congestion levels can unveil the impact of congestion on bus efficiency. For example, we can limit congestion to two levels only (green and orange) to evaluate how high and heavy traffic influence observed delays.
+
+### Impact of free tranfer strategy
+Implementing a the trasnfert strategy allow passengers to take the second bus for free, therefore, an individual does not prioritize 1-line trips anymore, and can take the first bus that can transport him to destination.
+
+### Impact of timetables strategy
+When an individual has information about bus timetables, he can wait for the best bus option instead of taking the first one that arrives.
+
+### Impact of individual taking/dropping off
+By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets. 
 
 <p align="center">
   <img width="800" height="380" alt="GUI of MarraSIM under GAMA" src="https://github.com/laatabix/MarraSIM/assets/15381143/f5c84e61-50fe-48e0-933f-13558eff9212">
