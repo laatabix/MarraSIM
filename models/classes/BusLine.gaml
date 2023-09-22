@@ -20,6 +20,9 @@ global {
 	// display or not buslines (instead of roads with traffic levels)
 	bool show_buslines <- false;
 	//font LFONT0 <- font("Arial", 5, #bold);
+	
+	// whether BRT lines are activated or not
+	bool brt_lines <- false;
 }
 
 /*******************************/
