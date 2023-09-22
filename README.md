@@ -167,7 +167,8 @@ Implementing a the trasnfert strategy allow passengers to take the second bus fo
 ### Impact of timetables strategy
 When an individual has information about bus timetables, he can wait for the best bus option instead of taking the first one that arrives.
 
-### Impact of BHNS lines
+### Impact of BRT lines
+We simulate the implantation of BRT (Bus Rapid Transit) lines to assess their impact on the general performance of the bus network.
 
 ### Impact of individual taking/dropping off
 By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets. 
