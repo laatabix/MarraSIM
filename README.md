@@ -80,7 +80,7 @@ At each time step (each minute), bus vehicles move between bus stops to take or 
 
 Each 10 minutes, a percentage (depending on the current affluence) of new passengers is distributed over bus stops to wait for a bus. Each passenger waits at the bus stop and takes the first bus that can transport him to his destination. If the transfer is off, passengers prioritize busses that can do a 1-line trip to the destination, and wait at least 1 hour before taking a 2-lines bus. If transfer is on, all passengers take the first relevant bus.
 
-Each hour, the state of roads is updated to consider the current traffic level. Affluence of passengers is also updated.
+Each hour, the state of roads is updated to consider the current traffic level that impact the circulation speed of busses. Affluence of passengers is also updated.
 
 ## Design concepts  
   1- *Individual decision-making* : 
