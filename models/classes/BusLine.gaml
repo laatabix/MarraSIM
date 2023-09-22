@@ -22,7 +22,8 @@ global {
 	//font LFONT0 <- font("Arial", 5, #bold);
 	
 	// whether BRT lines are activated or not
-	bool brt_lines <- false;
+	bool use_brt_lines <- false;
+	bool show_brt_lines <- false; // display or not BRT lines
 }
 
 /*******************************/
@@ -31,6 +32,7 @@ global {
 
 species BusLine schedules: [] parallel: true {
 	string bl_name;
+	bool bl_is_brt <- false;
 	int bl_interval_time_m <- -1; // theoretical interval time between buses of the line
 	float bl_com_speed <- 30 #km/#h; // average speed while considering the traffic constraints
 	list<BusStop> bl_outgoing_bs <- []; // list of bus stops on an outgoing path
@@ -102,7 +104,7 @@ species BusLine schedules: [] parallel: true {
 	}
 	
 	aspect default {
-		if show_buslines {
+		if (show_buslines and !bl_is_brt) or (bl_is_brt and show_brt_lines) {
 			draw (bl_shape+7.5#meter) color: bl_color;
 			draw circle(25#m) color: #white border:bl_color at: first(bl_outgoing_bs).location;
 			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: first(bl_outgoing_bs).location;
@@ -111,7 +113,7 @@ species BusLine schedules: [] parallel: true {
 			draw circle(25#m) color: #white border:bl_color at: first(bl_return_bs).location;
 			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: first(bl_return_bs).location;
 			draw circle(25#m) color: #white border:bl_color at: last(bl_return_bs).location;
-			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: last(bl_return_bs).location;
+			//draw ""+bl_name color: bl_color anchor:#center font:LFONT0 at: last(bl_return_bs).location;	
 		}
 	}
 }

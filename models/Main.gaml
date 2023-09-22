@@ -107,7 +107,7 @@ global {
 		
 		// create busses, bus stops, and connections
 		write "Creating busses and bus stops ...";
-		create BusStop from: marrakesh_bus_stops with: [bs_id::int(get("stop_numbe")), bs_name::get("stop_name")]{
+		create BusStop from: marrakesh_bus_stops with: [bs_id::int(get("stop_numbe")), bs_name::get("stop_name"),bs_is_brt::int(get("BRT")) = 1]{
 			bs_rd_segment <- RoadSegment closest_to self;
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
@@ -210,6 +210,7 @@ global {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
 				bl_interval_time_m <- int(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
 				bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
+				bl_is_brt <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]) = 1;
 			}
 			int i_counter <- 0;
 			create BusVehicle number: n_vehicles {
@@ -377,8 +378,10 @@ global {
 experiment MarraSIM type: gui {
 	
 	parameter "Show Bus Lines" category:"Visualization" var: show_buslines;
+	parameter "Show BRT Lines" category:"Visualization" var: show_brt_lines;
 	parameter "Use Google Traffic" category:"Traffic" var: traffic_on;
 	parameter "Free Transfer" category:"Bus network" var: transfer_on;
+	parameter "Use BRT" category:"Bus network" var: use_brt_lines;
 	
 	init {
 		minimum_cycle_duration <- 0.05;

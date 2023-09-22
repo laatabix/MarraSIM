@@ -225,11 +225,12 @@ species BusVehicle skills: [moving] {
 					float stop_prob <- ts.ts_type = TRAFFIC_STOP_SIGN ? 1 : TS_PROBA_STOP_TRAFF_LIGHT;
 					// if th stopping condition is true (flip) and the bus is 10 meters around a traffic signal
 					if location overlaps (10#meter around (ts)) and flip (stop_prob)  {
-						bv_stop_wait_time <- TS_STOP_WAIT_TIME;
-						bv_accumulated_signs_delay <- bv_accumulated_signs_delay + TS_STOP_WAIT_TIME;
+						// a BRT stops less than an ordinary bus
+						bv_stop_wait_time <- bv_line.bl_is_brt ? TS_BRT_STOP_WAIT_TIME : TS_BUS_STOP_WAIT_TIME;
+						bv_accumulated_signs_delay <- bv_accumulated_signs_delay + bv_stop_wait_time;
 						if bv_current_rd_segment.rs_zone != nil {
 							bv_current_rd_segment.rs_zone.pduz_accumulated_signs_delay <- 
-									bv_current_rd_segment.rs_zone.pduz_accumulated_signs_delay + TS_STOP_WAIT_TIME;
+									bv_current_rd_segment.rs_zone.pduz_accumulated_signs_delay + bv_stop_wait_time;
 						}
 						bv_current_traff_sign <- ts;
 					 	bv_in_move <- false;
@@ -244,7 +245,9 @@ species BusVehicle skills: [moving] {
 			bv_in_city <- bv_current_rd_segment.rs_in_city;
 			// a bus moves with the commercial speed inside Marrakesh, and BV_SUBURBAN_SPEED outside;
 			if bv_in_city {
-				if traffic_on {
+				// if it is not a BRT
+				if traffic_on and !bv_line.bl_is_brt {
+					// only non BRT busses are impacted by traffic level
 					bv_actual_speed <- bv_line.bl_com_speed / bv_current_rd_segment.rs_traffic_level;
 					if bv_actual_speed != bv_line.bl_com_speed {
 						float traff_del <- ((bv_line.bl_com_speed - bv_actual_speed)/bv_line.bl_com_speed)*step;

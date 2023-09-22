@@ -16,7 +16,8 @@ global {
 	int TRAFFIC_LIGHT <- 3;
 	
 	// time to stop at a stop sign or on red traffic light
-	float TS_STOP_WAIT_TIME <- 30#second;
+	float TS_BUS_STOP_WAIT_TIME <- 30#second;
+	float TS_BRT_STOP_WAIT_TIME <- 10#second;
 	// probability to stop on a traffic light
 	float TS_PROBA_STOP_TRAFF_LIGHT <- 0.5;
 }

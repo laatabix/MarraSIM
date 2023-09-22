@@ -25,6 +25,7 @@ species BusStop schedules: [] parallel: true{
 	int bs_id;
 	string bs_name;
 	bool bs_depart_or_terminus <- false;
+	bool bs_is_brt <- false; // if the bus stop belongs to a BRT line
 	list<BusStop> bs_neighbors <- []; // bus stops at a distance of BS_NEIGHBORING_DISTANCE
 	District bs_district;
 	PDUZone bs_zone;
