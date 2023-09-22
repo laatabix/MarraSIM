@@ -132,12 +132,16 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
     - *Road network* : the shapefile is downloaded from OSM and filtered to inlude only relevant roads used by bus lines and Grand Taxis.
     <p align="center">
     <img width="440" height="355" alt="Urban roads of Marrakesh" src="assets/roads.png">
-    <br/><i>Urban road network of Marrakesh.</i>
+    <br/><i>Urban road network of Marrakesh with traffic levels.</i>
     </p>
 
     - *City buildings* : this shapefile represents available buildings on OSM. These data are not mandatory for the model since buildings are only used for visualization purposes. Buildings objects (polygons) are merged (dissolved) into one spatial object to lighten simulations.
 
-    - *Bus stops network* : bus stops data was extracted from the public transport company website as a JSON file that was converted to a shapefile. These data were incomplete and erroneous and were manually treated to complete missing bus stops and correct erroneous data. 
+    - *Bus stops network* : bus stops data was extracted from the public transport company website as a JSON file that was converted to a shapefile. These data were incomplete and erroneous and were manually treated to complete missing bus stops and correct erroneous data.
+    <p align="center">
+    <img width="440" height="355" alt="Urban roads of Marrakesh" src="assets/bus_stops.png">
+    <br/><i>Bus stops in the urban Marrakesh.</i>
+    </p>
 
     - *Traffic signals network* : the shapefile of traffic signals was downloaded from OSM and filtered to include only traffic lights and stop signs. 
   
