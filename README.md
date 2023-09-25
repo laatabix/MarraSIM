@@ -145,15 +145,19 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 
     - *Traffic signals network* : the shapefile of traffic signals was downloaded from OSM and filtered to include only traffic lights and stop signs. 
   
-  - **Traffic data** : we use data from Google Traffic to simulate realistic traffic (congestion) levels. For a specified day, we download the typical traffic image for each hour (between 06:00 and 23:00), and convert those satellite images to shapefiles representing the road network with traffic levels. To facilitate conversion, we divide roads to 100m road segments each. The conversion is done through a color correspondance using the four levels (colors) of Google Traffic.
+  - **Traffic data** : we use data from Google Traffic to simulate realistic traffic (congestion) levels. For a specified day, we download the typical traffic image for each hour (between 06:00 and 23:00), and convert those satellite images to shapefiles representing the road network with traffic levels. To facilitate conversion, we divide roads into 100m road segments each. The conversion is done through a color correspondance using the four levels (colors) of Google Traffic.
 
   <p align="center">
   <img width="700" height="200" alt="Google Traffic" src="assets/road_traffic.png">
   <br/><i>Converting Google Traffic images to shapefiles of roads with traffic levels.</i>
   </p>
   
-  - **Mobility data** :
-      
+  - **Mobility data** : we
+  <p align="center">
+  <img width="800" height="400" alt="Travel Demand" src="assets/travel_demand.png">
+  <br/><i>Aggregating PDU daily travel data to build the OD matrix.</i>
+  </p>
+  
 #### Data structure
 #### Data mapping
 #### Data patterns
