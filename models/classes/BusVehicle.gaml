@@ -21,7 +21,7 @@ global {
 	// the mininmum time to take a passenger
 	float BV_TIME_TAKE_IND <- 10#second;
 	// the mininmum time to drop off a passenger
-	float BV_TIME_DROP_IND <- 4#second;
+	float BV_TIME_DROP_IND <- 5#second;
 	
 }
 
@@ -45,6 +45,8 @@ species BusVehicle skills: [moving] {
 	TrafficSignal bv_current_traff_sign <- nil; // when the vehicle stops at a traffic signal
 	RoadSegment bv_current_rd_segment <- nil;
 	list<Individual> bv_passengers <- [];
+	
+	map<BusStop,float> bv_time_table <- [];
 	
 	// stats
 	float bv_accumulated_traffic_delay <- 0.0;
@@ -201,17 +203,33 @@ species BusVehicle skills: [moving] {
 			}
 			// to know the next stop
 			if bv_current_direction = BL_DIRECTION_OUTGOING { // outgoing
-				if bv_current_bs = last(bv_line.bl_outgoing_bs) { // last stop
+				if bv_current_bs = last(bv_line.bl_outgoing_bs) { // last outgoing stop
 					bv_current_direction <- BL_DIRECTION_RETURN;
 					bv_next_stop <- bv_line.bl_return_bs[0];
 				} else {
+					// first outgoing stop : filling timetable of outgoing
+					if bv_current_bs = first(bv_line.bl_outgoing_bs) {
+						bv_time_table <- [bv_line.bl_outgoing_bs[0]:: time];
+						loop i from: 1 to: length(bv_line.bl_outgoing_bs)-1 {
+							bv_time_table <+ bv_line.bl_outgoing_bs[i] :: bv_time_table at bv_line.bl_outgoing_bs[i-1] +
+										(bv_line.bl_outgoing_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
+						}	
+					}
 					bv_next_stop <- bv_line.bl_outgoing_bs[(bv_line.bl_outgoing_bs index_of bv_next_stop) + 1];
 				}
 			} else { // return
-				if bv_current_bs = last(bv_line.bl_return_bs) { // last stop
+				if bv_current_bs = last(bv_line.bl_return_bs) { // last return stop
 					bv_current_direction <- BL_DIRECTION_OUTGOING;
 					bv_next_stop <- bv_line.bl_outgoing_bs[0];
 				} else {
+					// first return stop : filling timetable of return
+					if bv_current_bs = first(bv_line.bl_return_bs) {
+						bv_time_table <- [bv_line.bl_return_bs[0]::time];
+						loop i from: 1 to: length(bv_line.bl_return_bs)-1 {
+							bv_time_table <+ bv_line.bl_return_bs[i] :: bv_time_table at bv_line.bl_return_bs[i-1] +
+										(bv_line.bl_return_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
+						}	
+					}
 					bv_next_stop <- bv_line.bl_return_bs[(bv_line.bl_return_bs index_of bv_next_stop) + 1];
 				}
 			}

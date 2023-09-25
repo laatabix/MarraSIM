@@ -34,7 +34,7 @@ global {
 	
 	// simulation parameters
 	float step <- 10#second; // defining one simulation step as X seconds
-	bool save_data_on <- false; // whether to save simulation data (to /results) or not
+	bool save_data_on <- true; // whether to save simulation data (to /results) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
@@ -208,7 +208,7 @@ global {
 			int n_vehicles <- 2;
 			if dataMatrix index_of bl_name != nil {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
-				bl_interval_time_m <- int(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
+				bl_interval_time_m <- float(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
 				bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
 				bl_is_brt <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]) = 1;
 			}
@@ -381,6 +381,7 @@ experiment MarraSIM type: gui {
 	parameter "Show BRT Lines" category:"Visualization" var: show_brt_lines;
 	parameter "Use Google Traffic" category:"Traffic" var: traffic_on;
 	parameter "Free Transfer" category:"Bus network" var: transfer_on;
+	parameter "Time tables" category:"Bus network" var: time_tables_on;
 	parameter "Use BRT" category:"Bus network" var: use_brt_lines;
 	
 	init {

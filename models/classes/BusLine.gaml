@@ -33,8 +33,8 @@ global {
 species BusLine schedules: [] parallel: true {
 	string bl_name;
 	bool bl_is_brt <- false;
-	int bl_interval_time_m <- -1; // theoretical interval time between buses of the line
-	float bl_com_speed <- 30 #km/#h; // average speed while considering the traffic constraints
+	float bl_interval_time_m <- 15#minute; // theoretical interval time between buses of the line
+	float bl_com_speed <- 20 #km/#h; // average speed while considering the traffic constraints
 	list<BusStop> bl_outgoing_bs <- []; // list of bus stops on an outgoing path
 	list<BusStop> bl_return_bs <- []; // bus stops on the return path
 	list<int> bl_outgoing_dists <- []; // computed distances between two successive bus stops on the outoging path

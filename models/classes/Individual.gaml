@@ -16,9 +16,11 @@ global {
 	// time to wait for 1L-trips before taking a 2L-trip when transfer is off
 	int IND_WAITING_TIME_FOR_1L_TRIPS <- int(1#hour);
 	
+	// individuals have information about bus timetables 
+	bool time_tables_on <- false; 
+	
 	// a list of arrivals for data saving
 	list<Individual> unsaved_arrivals <- [];
-	
 }
 
 /*******************************/
