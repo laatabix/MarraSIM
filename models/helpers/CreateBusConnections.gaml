@@ -19,33 +19,46 @@ global {
 	geometry shape <- envelope (marrakesh_roads);
 	
 	init {
-		create RoadSegment from: marrakesh_roads;
-		road_network <- as_edge_graph(list(RoadSegment));
-		write "create RoadSegment .. OK";
 		
-		create BusStop from: marrakesh_bus_stops with: [bs_id::int(get("stop_numbe")), bs_name::get("stop_name")]{
-			bs_rd_segment <- RoadSegment closest_to self;
-			location <- bs_rd_segment.shape.points closest_to self;
+		/* MAIN SHARED CODE */
+		
+		// create the environment: city, districts, roads, traffic signals
+		write "Creating the city environment ...";
+		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))]{
+			if rs_in_city {
+				rs_zone <- first(PDUZone overlapping self);	
+			}
 		}
-		write "create BusStop .. OK";
-				
-		loop i from: 0 to: bustopsMatrix.rows -1 {
-			string bus_line_name <- bustopsMatrix[0,i];
+		road_network <- as_edge_graph(list(RoadSegment));
+
+		// create busses, bus stops, and connections
+		write "Creating busses and bus stops ...";
+		create BusStop from: marrakesh_bus_stops with: [bs_id::int(get("stop_numbe")), bs_name::get("stop_name"),bs_is_brt::int(get("BRT")) = 1]{
+			bs_rd_segment <- RoadSegment closest_to self;
+			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
+			bs_district <- first(District overlapping self);
+			bs_zone <- first(PDUZone overlapping self);
+		}
+		
+		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
+		loop i from: 0 to: dataMatrix.rows -1 {
+			string bus_line_name <- dataMatrix[0,i];
 			// create the bus line if it does not exist yet
 			BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
+			
 			if current_bl = nil {
 				create BusLine returns: my_busline { bl_name <- bus_line_name; }
 				current_bl <- my_busline[0];
 			}
-			BusStop current_bs <- BusStop first_with (each.bs_id = int(bustopsMatrix[3,i]));
+			BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
 			if current_bs != nil {
-				if int(bustopsMatrix[1,i]) = BL_DIRECTION_OUTGOING {
-					if length(current_bl.bl_outgoing_bs) != int(bustopsMatrix[2,i]) {
+				if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
+					if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
 					current_bl.bl_outgoing_bs <+ current_bs;
 				} else {
-					if length(current_bl.bl_return_bs) != int(bustopsMatrix[2,i]) {
+					if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
 						write "Error in order of bus stops!" color: #red;
 					}
 					current_bl.bl_return_bs <+ current_bs;
@@ -55,27 +68,45 @@ global {
 					current_bs.bs_bus_lines <+ current_bl;
 				}
 			} else {
-				write "Error, the bus stop does not exist : " + bustopsMatrix[3,i] + " (" + bustopsMatrix[1,i] +")" color: #red;
+				write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
 				return;
 			}
 		}
-		write "create BusLine .. OK";
 		
-		write "Linking BusStops to BusLines ..";
+		// calculate distances of each bus line
+		geometry geom;
 		ask BusLine {
 			loop i from: 0 to: length(bl_outgoing_bs) - 2 {
-				bl_outgoing_dists <+ bl_outgoing_bs[i].dist_to_bs(bl_outgoing_bs[i+1]);
+				try {
+					geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
+				} catch {
+					geom <- path_to(bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
+				}
+				bl_outgoing_dists <+ geom.perimeter;
+				bl_shape <- bl_shape + geom;
 			}
 			loop i from: 0 to: length(bl_return_bs) - 2 {
-				bl_return_dists <+ bl_return_bs[i].dist_to_bs(bl_return_bs[i+1]);
+				try {
+					geom <- path_between(road_network, bl_return_bs[i], bl_return_bs[i+1]).shape;
+				} catch {
+					geom <- path_to(bl_return_bs[i], bl_return_bs[i+1]).shape;
+				}
+				bl_return_dists <+ geom.perimeter;
+				bl_shape <- bl_shape + geom;
 			}
+			first(bl_outgoing_bs).bs_depart_or_terminus <- true;
+			last(bl_outgoing_bs).bs_depart_or_terminus <- true;
+			first(bl_return_bs).bs_depart_or_terminus <- true;
+			last(bl_return_bs).bs_depart_or_terminus <- true;
 		}
-		
-		write "Computing BusStop neighbors ..";
 		ask BusStop {
 			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
 			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
+		
+		
+		/* SPECIFIC WORK CODE */
+		
 		
 		// create bus connection for each bus line
 		write "Creating bus connections ...";
@@ -170,14 +201,19 @@ global {
 		write "Number of created bus connections: " + length(BusConnection);
 
 		write "Saving bus connections to a text file ...";
-		bool dl <- delete_file("../../includes/csv/bus_connections.csv");
-		save "bl1,bl2,bs1,bs2,dir1,dir2,condist" format: 'text' rewrite: true to: "../../includes/csv/bus_connections.text";
+		string conn_ss <- "bl1,bl2,bs1,bs2,dir1,dir2,condist" + "\n";
+		
 		ask BusConnection {
-			save bc_bus_lines[0].bl_name + ',' + bc_bus_lines[1].bl_name + ',' + bc_bus_stops[0].bs_id + ',' + bc_bus_stops[1].bs_id
-				+ ',' + bc_bus_directions[0] + ',' + bc_bus_directions[1] + ',' + bc_connection_distance
-				format: "text" rewrite: false to: "../../includes/csv/bus_connections.text";	
+			conn_ss <- conn_ss + bc_bus_lines[0].bl_name + ',' + bc_bus_lines[1].bl_name + ',' + bc_bus_stops[0].bs_id + ',' + bc_bus_stops[1].bs_id
+				+ ',' + bc_bus_directions[0] + ',' + bc_bus_directions[1] + ',' + bc_connection_distance + '\n';	
 		}
-		bool rn <- rename_file("../../includes/csv/bus_connections.text","../../includes/csv/bus_connections.csv");//*/
+		
+		bool dl <- delete_file("../../includes/csv/bus_connections.csv");
+		
+		save conn_ss format: 'text' rewrite: true to: "../../includes/csv/bus_connections.text";
+		
+		bool rn <- rename_file("../../includes/csv/bus_connections.text","../../includes/csv/bus_connections.csv");
+		
 		write "DONE." color: #green;	
 	}
 }

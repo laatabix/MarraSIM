@@ -87,11 +87,7 @@ global {
 		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
 		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))]{
 			if rs_in_city {
-				rs_zone <- first(PDUZone overlapping self);
-				// if its in the city and did not overlap a PDU zone, affect the closest one
-				if rs_zone = nil {
-					rs_zone <- PDUZone closest_to self;
-				}	
+				rs_zone <- first(PDUZone overlapping self);	
 			}
 		}
 		road_network <- as_edge_graph(list(RoadSegment));
@@ -112,11 +108,6 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
-			// if its in the city and did not overlap a PDU zone, affect the closest one
-			// the two shapefiles boundaries of districts and PDU are not completely identical !
-			if bs_zone = nil and bs_district != nil {
-				bs_zone <- PDUZone closest_to self;
-			}
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
@@ -200,6 +191,8 @@ global {
 				write "Error: nil BusLine while reading bus_connections file!" color: #red;
 			}
 		}
+		
+		/*****/
 		
 		// creating n_vehicles for each bus line
 		write "Creating bus vehicles ...";
