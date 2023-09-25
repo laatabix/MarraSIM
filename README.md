@@ -152,7 +152,8 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
   <br/><i>Converting Google Traffic images to shapefiles of roads with traffic levels.</i>
   </p>
   
-  - **Mobility data** : we
+  - **Mobility data** : the PDU report provides some information about mobility and travel demand in Marrakesh. We use data on daily generation of travel demand by PDU zone, and data on the average number of travels by bus between 8 aggregate zones. We combine these data to build an origin-destination matrix of daily bus passengers between the PDU zones.
+
   <p align="center">
   <img width="800" height="400" alt="Travel Demand" src="assets/travel_demand.png">
   <br/><i>Aggregating PDU daily travel data to build the OD matrix.</i>
