@@ -168,12 +168,16 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 # Preliminary results
 
 ## Simulated scenarios
+We test different strategies to evaludate their impact and assess how they can contribute to reduce travel delay/cost.
 
 ### Impact of road congestion
 Controlling congestion levels can unveil the impact of congestion on bus efficiency. For example, we can limit congestion to two levels only (green and orange) to evaluate how high and heavy traffic influence observed delays.
 
 ### Impact of free tranfer strategy
 Implementing a the trasnfert strategy allow passengers to take the second bus for free, therefore, an individual does not prioritize 1-line trips anymore, and can take the first bus that can transport him to destination.
+
+### Impact of individual taking/dropping off
+By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets.
 
 ### Impact of timetables strategy
 When an individual has information about bus timetables, he can wait for the best bus option instead of taking the first one that arrives.
@@ -183,9 +187,7 @@ We simulate the implantation of BRT (Bus Rapid Transit) lines to assess their im
 
 ### Impact of Grand Taxis
 We introduce the network of Grand Taxis to evaluate their impact on bus network efficiency.
-
-### Impact of individual taking/dropping off
-By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets. 
+ 
 
 <p align="center">
   <img width="800" height="380" alt="GUI of MarraSIM under GAMA" src="https://github.com/laatabix/MarraSIM/assets/15381143/f5c84e61-50fe-48e0-933f-13558eff9212">
