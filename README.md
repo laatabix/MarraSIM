@@ -181,6 +181,9 @@ When an individual has information about bus timetables, he can wait for the bes
 ### Impact of BRT lines
 We simulate the implantation of BRT (Bus Rapid Transit) lines to assess their impact on the general performance of the bus network.
 
+### Impact of Grand Taxis
+We introduce the network of Grand Taxis to evaluate their impact on bus network efficiency.
+
 ### Impact of individual taking/dropping off
 By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets. 
 
