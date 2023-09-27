@@ -164,7 +164,7 @@ global {
 			} else { // else, compute
 				do make_plans;
 			}
-			write ind_id;
+			//write ind_id;
 		}
 		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));	
 		
@@ -187,25 +187,32 @@ global {
 		}
 		write "2 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));
 		
-		write "Saving populations and travel plans to text files ...";		
+		write "Preparing data ...";
+		bool dl <- delete_file("../../includes/csv/populations.csv");
+		dl <- delete_file("../../includes/csv/travel_plans.csv");
 		string ind_ss <- "ind,ozone,dzone,obs,dbs" + "\n";
 		string plan_ss <- "ind,type,startbs,bl,endbs,dir,dist,walk" + "\n";
 		
-		ask Individual {
-			ind_ss <- ind_ss + ind_id + ',' + ind_origin_zone.pduz_code + ',' + ind_destin_zone.pduz_code + ',' + 
-							ind_origin_bs.bs_id + ',' + ind_destin_bs.bs_id + '\n';
-			
-			loop bt over: ind_available_bt {
-				plan_ss <- plan_ss + ind_id + ',' + bt.bt_type + ',' + bt.bt_start_bs.bs_id + ',' + bt.bt_bus_line.bl_name + ',' +
-						bt.bt_end_bs.bs_id + ',' + bt.bt_bus_direction + ',' + bt.bt_bus_distance + ',' + bt.bt_walk_distance + '\n';
-			}	
+		int N <- length(Individual);
+		loop i from: 0 to: N-1 {
+			ask Individual[i] {
+				ind_ss <- ind_ss + ind_id + ',' + ind_origin_zone.pduz_code + ',' + ind_destin_zone.pduz_code + ',' + 
+								ind_origin_bs.bs_id + ',' + ind_destin_bs.bs_id + '\n';
+				
+				loop bt over: ind_available_bt {
+					plan_ss <- plan_ss + ind_id + ',' + bt.bt_type + ',' + bt.bt_start_bs.bs_id + ',' + bt.bt_bus_line.bl_name + ',' +
+							bt.bt_end_bs.bs_id + ',' + bt.bt_bus_direction + ',' + bt.bt_bus_distance + ',' + bt.bt_walk_distance + '\n';
+				}
+			}
+			// saving each 1000 individuals apart to avoid memory problems in case of large datasets
+			if i mod 1000 = 0 or i = N-1 {
+				save ind_ss format: 'text' rewrite: false to: "../../includes/csv/populations.text";
+				save plan_ss format: 'text' rewrite: false to: "../../includes/csv/travel_plans.text";
+				ind_ss <- "";
+				plan_ss <- "";
+				write "Saving populations and travel plans to text files ...";
+			}
 		}
-		
-		bool dl <- delete_file("../../includes/csv/populations.csv");
-		dl <- delete_file("../../includes/csv/travel_plans.csv");
-		
-		save ind_ss format: 'text' rewrite: true to: "../../includes/csv/populations.text";
-		save plan_ss format: 'text' rewrite: true to: "../../includes/csv/travel_plans.text";
 		
 		bool rn <- rename_file("../../includes/csv/populations.text","../../includes/csv/populations.csv");
 		rn <- rename_file("../../includes/csv/travel_plans.text","../../includes/csv/travel_plans.csv");	

@@ -137,44 +137,80 @@ species BusVehicle skills: [moving] {
 					}
 					
 					if !empty (waiting_inds) {
+						
+						/** filter individuals based on active strategies */
+						
+						/* transfer */			
 						// if transfer is off, remove individuals with 2L-trip that can still wait for a 1L-trip
 						if !transfer_on {
-							
 							// first, retrieve individuals with no 1L trips on this bus (the bus can only transfer them)
-							list<Individual> indivs <- (waiting_inds where (each.ind_current_plan_index = 0 and
-								empty(each.ind_available_bt where (each.bt_bus_line = bv_line and each.bt_bus_direction = bv_current_direction
-								and each.bt_type = BUS_TRIP_SINGLE_LINE))));
+							list<Individual> inds_to_remove <- (waiting_inds where (each.ind_current_plan_index = 0 and
+								empty(each.ind_available_bt where (each.bt_bus_line = bv_line and
+								each.bt_bus_direction = bv_current_direction and each.bt_type = BUS_TRIP_SINGLE_LINE))));
 							
 							// see if these individuals can do a 1L-trip on another bus
-							if !empty(indivs) {
+							if !empty(inds_to_remove) {
 								// individuals with 1L trip on other busses and who can still wait for 1L trip
-								indivs <- (indivs where (int(time - each.ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS and
+								inds_to_remove <- (inds_to_remove where (int(time - each.ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS and
 									!empty(each.ind_available_bt where (each.bt_bus_line != bv_line and each.bt_type= BUS_TRIP_SINGLE_LINE))));
-								waiting_inds <- waiting_inds - indivs;
+								// remove
+								waiting_inds <- waiting_inds - inds_to_remove;
 							}
 						}
 						
+						/* time tables */
+						// if passengers have information about time tables of bus lines, remove individuals that can do
+						// a better trip on another line 					
+						if time_tables_on {
+							list<Individual> inds_to_remove <- [];
+							
+							loop indiv over: waiting_inds {
+								// time to arrive to first destination using this bus
+								float time_to_dest_this <- indiv.ind_available_bt min_of (bv_time_table at each.bt_end_bs);
+								float min_time_to_dest_others <- #max_float;
+								// TODO get time to final destination following the BT
+								loop bt over: indiv.ind_available_bt{
+									float tt <- BusVehicle where (each.bv_line = bt.bt_bus_line and
+										each.bv_current_direction = bt.bt_bus_direction) min_of (each.bv_time_table at bt.bt_end_bs);
+									if tt < min_time_to_dest_others {
+										min_time_to_dest_others <- tt;
+									}
+								}
+								if min_time_to_dest_others < time_to_dest_this {
+									inds_to_remove <+ indiv;
+								}
+							}
+							// remove
+							waiting_inds <- waiting_inds - inds_to_remove;
+						}
+
+						/*******/
+						
 						nn <- 0;				
 						ask n_individs among waiting_inds {
+							// available bus trips with this bus line and direction
+							list<BusTrip> my_bus_trips <- ind_available_bt where (each.bt_bus_line = myself.bv_line
+										and each.bt_bus_direction = myself.bv_current_direction);
+							
 							// the individual was waiting for a first ride
 							if ind_current_plan_index = 0 {
+
 								// prefer 1L trips
 								if !transfer_on and int(time - ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS {
-									ind_current_bt <- ind_available_bt where (each.bt_bus_line = myself.bv_line
-										and each.bt_bus_direction = myself.bv_current_direction and each.bt_type = BUS_TRIP_SINGLE_LINE)
+									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
 										with_min_of (each.bt_bus_distance + each.bt_walk_distance);
 								}
 								if ind_current_bt = nil {
-									ind_current_bt <- ind_available_bt where (each.bt_bus_line = myself.bv_line
-											and each.bt_bus_direction = myself.bv_current_direction)
-												with_min_of (each.bt_bus_distance + each.bt_walk_distance);	
-								}	
+									// transfer is on or no 1L trips has been found or the individual has waited for more than 1 hour
+									ind_current_bt <- my_bus_trips with_min_of (each.bt_bus_distance + each.bt_walk_distance);						
+								}								
 							} else {
 								// the individual is making a second ride
 								ind_current_bt <- ind_available_bt where (each.bt_type= BUS_TRIP_2ND_LINE and 
 										each.bt_bus_line = myself.bv_line and each.bt_bus_direction = myself.bv_current_direction)
-											with_min_of (each.bt_bus_distance + each.bt_walk_distance);	
+											with_min_of (each.bt_bus_distance + each.bt_walk_distance);
 							}
+							// a trip has been picked
 							if ind_current_bt !=nil {
 								nn <- nn + 1;
 								myself.bv_passengers <+ self;

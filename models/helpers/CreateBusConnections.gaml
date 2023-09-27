@@ -209,9 +209,7 @@ global {
 		}
 		
 		bool dl <- delete_file("../../includes/csv/bus_connections.csv");
-		
 		save conn_ss format: 'text' rewrite: true to: "../../includes/csv/bus_connections.text";
-		
 		bool rn <- rename_file("../../includes/csv/bus_connections.text","../../includes/csv/bus_connections.csv");
 		
 		write "DONE." color: #green;	
