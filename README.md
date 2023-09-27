@@ -145,15 +145,20 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 
     - *Traffic signals network* : the shapefile of traffic signals was downloaded from OSM and filtered to include only traffic lights and stop signs. 
   
-  - **Traffic data** : we use data from Google Traffic to simulate realistic traffic (congestion) levels. For a specified day, we download the typical traffic image for each hour (between 06:00 and 23:00), and convert those satellite images to shapefiles representing the road network with traffic levels. To facilitate conversion, we divide roads to 100m road segments each. The conversion is done through a color correspondance using the four levels (colors) of Google Traffic.
+  - **Traffic data** : we use data from Google Traffic to simulate realistic traffic (congestion) levels. For a specified day, we download the typical traffic image for each hour (between 06:00 and 23:00), and convert those satellite images to shapefiles representing the road network with traffic levels. To facilitate conversion, we divide roads into 100m road segments each. The conversion is done through a color correspondance using the four levels (colors) of Google Traffic.
 
   <p align="center">
   <img width="700" height="200" alt="Google Traffic" src="assets/road_traffic.png">
   <br/><i>Converting Google Traffic images to shapefiles of roads with traffic levels.</i>
   </p>
   
-  - **Mobility data** :
-      
+  - **Mobility data** : the PDU report provides some information about mobility and travel demand in Marrakesh. We use data on daily generation of travel demand by PDU zone, and data on the average number of travels by bus between 8 aggregate zones. We combine these data to build an origin-destination matrix of daily bus passengers between the PDU zones.
+
+  <p align="center">
+  <img width="800" height="400" alt="Travel Demand" src="assets/travel_demand.png">
+  <br/><i>Aggregating PDU daily travel data to build the OD matrix.</i>
+  </p>
+  
 #### Data structure
 #### Data mapping
 #### Data patterns
@@ -163,6 +168,7 @@ Data include shapefiles and data on the bus network, traffic, and mobility. Thes
 # Preliminary results
 
 ## Simulated scenarios
+We test different strategies to evaludate their impact and assess how they can contribute to reduce travel delay/cost.
 
 ### Impact of road congestion
 Controlling congestion levels can unveil the impact of congestion on bus efficiency. For example, we can limit congestion to two levels only (green and orange) to evaluate how high and heavy traffic influence observed delays.
@@ -170,14 +176,18 @@ Controlling congestion levels can unveil the impact of congestion on bus efficie
 ### Impact of free tranfer strategy
 Implementing a the trasnfert strategy allow passengers to take the second bus for free, therefore, an individual does not prioritize 1-line trips anymore, and can take the first bus that can transport him to destination.
 
+### Impact of individual taking/dropping off
+By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets.
+
 ### Impact of timetables strategy
 When an individual has information about bus timetables, he can wait for the best bus option instead of taking the first one that arrives.
 
 ### Impact of BRT lines
 We simulate the implantation of BRT (Bus Rapid Transit) lines to assess their impact on the general performance of the bus network.
 
-### Impact of individual taking/dropping off
-By variating the constante *BV_TIME_TAKE_IND*, we can simulate the impact of implementing strategies to facilitate taking passengers. This delay is important as the bus driver is also responsible for selling bus tickets. 
+### Impact of Grand Taxis
+We introduce the network of Grand Taxis to evaluate their impact on bus network efficiency.
+ 
 
 <p align="center">
   <img width="800" height="380" alt="GUI of MarraSIM under GAMA" src="https://github.com/laatabix/MarraSIM/assets/15381143/f5c84e61-50fe-48e0-933f-13558eff9212">
