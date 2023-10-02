@@ -168,14 +168,16 @@ species BusVehicle skills: [moving] {
 								// time to arrive to first destination using this bus
 								float time_to_dest_this <- indiv.ind_available_bt min_of (bv_time_table at each.bt_end_bs);
 								float min_time_to_dest_others <- #max_float;
-								// TODO get time to final destination following the BT
-								loop bt over: indiv.ind_available_bt{
+								// TODO get time to final destination following the BT to consider 2L-trips
+								// TODO not only to the final bus stop using this line (1L) (it may be a transfer)
+								loop bt over: indiv.ind_available_bt {
 									float tt <- BusVehicle where (each.bv_line = bt.bt_bus_line and
 										each.bv_current_direction = bt.bt_bus_direction) min_of (each.bv_time_table at bt.bt_end_bs);
 									if tt < min_time_to_dest_others {
 										min_time_to_dest_others <- tt;
 									}
 								}
+								// end TODO
 								if min_time_to_dest_others < time_to_dest_this {
 									inds_to_remove <+ indiv;
 								}

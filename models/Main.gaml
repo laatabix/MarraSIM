@@ -205,24 +205,26 @@ global {
 				bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
 				bl_is_brt <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]) = 1;
 			}
-			int i_counter <- 0;
-			create BusVehicle number: n_vehicles {
-				bv_line <- myself;				
-				bv_current_bs <- bv_line.bl_outgoing_bs[0];
-				bv_current_bs.bs_current_stopping_buses <+ self;
-				bv_next_stop <- bv_current_bs;
-				bv_current_direction <- BL_DIRECTION_OUTGOING;
-				location <- bv_current_bs.location;
-				bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
-				i_counter <- i_counter + 1;
-			}	
-			ask last (BusVehicle where (each.bv_line = self)) {
-				bv_current_bs <- bv_line.bl_return_bs[0];
-				bv_current_bs.bs_current_stopping_buses <+ self;
-				bv_next_stop <- bv_current_bs;
-				bv_current_direction <- BL_DIRECTION_RETURN;
-				location <- bv_current_bs.location;
-				bv_stop_wait_time <- 0.0;
+			if !bl_is_brt or use_brt_lines { 
+				int i_counter <- 0;
+				create BusVehicle number: n_vehicles {
+					bv_line <- myself;				
+					bv_current_bs <- bv_line.bl_outgoing_bs[0];
+					bv_current_bs.bs_current_stopping_buses <+ self;
+					bv_next_stop <- bv_current_bs;
+					bv_current_direction <- BL_DIRECTION_OUTGOING;
+					location <- bv_current_bs.location;
+					bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
+					i_counter <- i_counter + 1;
+				}	
+				ask last (BusVehicle where (each.bv_line = self)) {
+					bv_current_bs <- bv_line.bl_return_bs[0];
+					bv_current_bs.bs_current_stopping_buses <+ self;
+					bv_next_stop <- bv_current_bs;
+					bv_current_direction <- BL_DIRECTION_RETURN;
+					location <- bv_current_bs.location;
+					bv_stop_wait_time <- 0.0;
+				}
 			}		
 		}
 		
