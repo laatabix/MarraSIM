@@ -108,6 +108,13 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
+			// affect the closest zone to nearby bus stops
+			if bs_zone = nil {
+				PDUZone pdz <- PDUZone closest_to self;
+				if self distance_to pdz <= BS_NEIGHBORING_DISTANCE {
+					bs_zone <- pdz;
+				}
+			}
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
