@@ -30,11 +30,11 @@ global {
 	// affluence of passengers every hour starting from midnight (0). These data are based on assumption and may not be accurate 
 	float current_affluence <- 0.0;
 	list<float> h_affluence <- [0.000,0.000,0.000,0.000,0.000,0.000,0.025,0.050,0.100,0.100,0.050,0.050, // [00:00 -> 11:00]
-								0.100,0.100,0.025,0.025,0.025,0.050,0.100,0.050,0.050,0.050,0.025,0.025];// [12:00 ->  23:00]
+								0.100,0.100,0.050,0.050,0.050,0.050,0.100,0.050,0.025,0.025,0.025,0.000];// [12:00 ->  23:00]
 	
 	// simulation parameters
 	float step <- 10#second; // defining one simulation step as X seconds
-	bool save_data_on <- true; // whether to save simulation data (to /results) or not
+	bool save_data_on <- true; // whether to save simulation data (to /outputs) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
@@ -47,8 +47,8 @@ global {
 	int finished_1L_journeys <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1));
 	int finished_2L_journeys <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2));
 	
-	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (each.ind_trip_time);
-	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (each.ind_trip_time);
+	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (sum(each.ind_trip_times));
+	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (sum(each.ind_trip_times));
 	
 	float mean_waiting_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (sum(each.ind_waiting_times));
 	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (sum(each.ind_waiting_times));
@@ -69,15 +69,15 @@ global {
 		} else {
 			sim_id <- machine_time;
 			save "cycle,pduzone,w_people,w_time,traf_del,pass_del,sign_del" 
-					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/pduzones.csv";
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/pduzones.csv";
 			save "cycle,waiting1st,waiting2nd,onboard,arrived" 
-					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/individuals.csv";
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/individuals.csv";
 			save "cycle,tt1l,tt2l,wt1l,wt2l"
-					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/times.csv";
-			save "cycle,bl,outs,rets,outs_board,rets_board,outs_traff,rets_traff,outs_sign,rets_sign,outs_psg,rets_psg"
-					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/buslines.csv";
-			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk"
-					format: 'text' rewrite: true to: "../results/data_"+sim_id+"/bustrips.csv";	
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/times.csv";
+			save "cycle,bl,outs,rets,outs_board,rets_board,traff,sign,psg"
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/buslines.csv";
+			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk,wtt,tpt"
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/bustrips.csv";	
 		}
 		
 		// create the environment: city, districts, roads, traffic signals
@@ -237,7 +237,7 @@ global {
 		
 		// create the population of moving individuals between PUDZones
 		write "Creating population ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/populations_1000.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/populations_5000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
@@ -249,7 +249,7 @@ global {
 		}
 		
 		write "Creating travel plans ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/travel_plans_1000.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/travel_plans_5000.csv",true));
 		int id_0 <- -1;
 		int id_x;
 		Individual indiv_x;
@@ -318,7 +318,7 @@ global {
 		// ask a random number of people (N%) to travel 
 		int nn <- int(current_affluence / (60/Nminutes) * length(Individual));
 		write formatted_time() + nn + " new people are travelling ...";
-		ask nn among (Individual where (!each.ind_moving)) {
+		ask nn among (Individual where !(each.ind_moving or each.ind_arrived)) {
 			ind_moving <- true;
 			ind_waiting_bs <- ind_origin_bs;
 			ind_waiting_bs.bs_waiting_people <+ self;
@@ -333,7 +333,7 @@ global {
 			if save_data_on {
 				save '' + cycle + ',' + pduz_code + ',' + indicators[0] + ',' + indicators[1] + ',' +
 					pduz_accumulated_traffic_delay + ',' + pduz_accumulated_passaging_delay + ',' + pduz_accumulated_signs_delay 
-									format: "text" rewrite: false to: "../results/data_"+sim_id+"/pduzones.csv";
+									format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/pduzones.csv";
 			}
 		}
 		
@@ -341,11 +341,11 @@ global {
 		if save_data_on {
 			save '' + cycle + ',' + waiting_people_for_1st + ',' + waiting_people_for_2nd + ',' +
 				passengers_on_board + ',' + arrived_people_to_dest
-					format: "text" rewrite: false to: "../results/data_"+sim_id+"/individuals.csv";
+					format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/individuals.csv";
 					
 			save '' + cycle + ',' + mean_travel_time_1L + ',' + mean_travel_time_2L + ',' + 
 					mean_waiting_time_1L + ',' + mean_waiting_time_2L
-					format: "text" rewrite: false to: "../results/data_"+sim_id+"/times.csv";
+					format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/times.csv";
 						
 			ask BusLine {
 				list<BusVehicle> bvs <- BusVehicle where (each.bv_line = self);
@@ -354,19 +354,27 @@ global {
 				
 				save '' + cycle + ',' + bl_name + ',' + length(outs) + ',' + length(rets) + ',' +
 					outs sum_of length(each.bv_passengers) + ',' + rets sum_of length(each.bv_passengers) + ',' +
-					outs sum_of (each.bv_accumulated_traffic_delay) + ',' + rets sum_of (each.bv_accumulated_traffic_delay) + ',' +
-					outs sum_of (each.bv_accumulated_signs_delay) + ',' + rets sum_of (each.bv_accumulated_signs_delay) + ',' +
-					outs sum_of (each.bv_accumulated_passaging_delay) + ',' + rets sum_of (each.bv_accumulated_passaging_delay)
-						format: "text" rewrite: false to: "../results/data_"+sim_id+"/buslines.csv";
+					bvs sum_of (each.bv_accumulated_traffic_delay) + ',' +
+					bvs sum_of (each.bv_accumulated_signs_delay) + ',' +
+					bvs sum_of (each.bv_accumulated_passaging_delay)
+						format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/buslines.csv";
 			}
 			
 			ask unsaved_arrivals {
 				loop i from: 0 to: length(ind_actual_journey) - 1 {
-					save '' + cycle + ',' + ind_id + ',' + ind_actual_journey[i].bt_start_bs.bs_zone.pduz_code + ',' + 
-						ind_actual_journey[i].bt_end_bs.bs_zone.pduz_code + ',' + ind_actual_journey[i].bt_type + ',' +
-						ind_actual_journey[i].bt_bus_line.bl_name + ',' + ind_actual_journey[i].bt_bus_direction + ',' +
-						ind_actual_journey[i].bt_bus_distance + ',' + ind_actual_journey[i].bt_walk_distance
-						format: "text" rewrite: false to: "../results/data_"+sim_id+"/bustrips.csv";		
+					PDUZone startzone <- ind_actual_journey[i].bt_start_bs.bs_zone;
+					if startzone = nil {
+						startzone <- PDUZone closest_to ind_actual_journey[i].bt_start_bs;
+					}
+					PDUZone endzone <- ind_actual_journey[i].bt_end_bs.bs_zone;
+					if endzone = nil {
+						endzone <- PDUZone closest_to ind_actual_journey[i].bt_end_bs;
+					}
+					save '' + cycle + ',' + ind_id + ',' + startzone.pduz_code + ',' + endzone.pduz_code + ',' + 
+							ind_actual_journey[i].bt_type + ',' + ind_actual_journey[i].bt_bus_line.bl_name + ',' +
+							ind_actual_journey[i].bt_bus_direction + ',' + ind_actual_journey[i].bt_bus_distance + ',' +
+							ind_actual_journey[i].bt_walk_distance + ',' + ind_waiting_times [i] + ',' + ind_trip_times[i]
+						format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/bustrips.csv";		
 				}
 			}
 			unsaved_arrivals <- [];
@@ -379,21 +387,26 @@ global {
 
 experiment MarraSIM type: gui {
 	
-	parameter "Show Bus Lines" category:"Visualization" var: show_buslines;
-	parameter "Show BRT Lines" category:"Visualization" var: show_brt_lines;
-	parameter "Use Google Traffic" category:"Traffic" var: traffic_on;
+	category "Simulation" expanded: false color: #gamablue; 
+	category "Road Traffic" expanded: false color: #orange; 
+	category "Bus network" expanded: true color: #purple; 
+	
+	parameter "Show Bus Lines" category:"Simulation" var: show_buslines;
+	parameter "Show BRT Lines" category:"Simulation" var: show_brt_lines;
+	text "Save data parameter is " + save_data_on category:"Simulation" color: #darkred font: font("Tahoma",10,#bold);
+	parameter "Use Google Traffic" category:"Road Traffic" var: traffic_on;
 	parameter "Free Transfer" category:"Bus network" var: transfer_on;
 	parameter "Time tables" category:"Bus network" var: time_tables_on;
-	parameter "Use BRT" category:"Bus network" var: use_brt_lines;
+	text "Use BRT parameter is " + use_brt_lines category:"Bus network" color: #darkred font: font("Tahoma",10,#bold);
 	
 	init {
 		minimum_cycle_duration <- 0.05;
 	}
 	
 	output {
-		//layout #split toolbars: false tabs: false editors: false navigator: false parameters: true tray: false consoles: true;
+		layout /*#split*/ toolbars: false tabs: true editors: false navigator: false parameters: true tray: false consoles: true;
 		
-		display Marrakesh type: opengl background: #whitesmoke {
+		/*display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
 			overlay position: {10#px,10#px} size: {100#px,40#px} background: #gray{
@@ -459,12 +472,12 @@ experiment MarraSIM type: gui {
 			chart "Mean Travel Time (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.34} x_label: "Time" {
 				data "1-L trips" color: #darkgreen value: mean_travel_time_1L/1#mn marker_shape: marker_empty;
-				data "2-L trips" color: #gamablue value: mean_travel_time_2L/1#mn marker_shape: marker_empty;
+				data "2-L trips" color: #darkred value: mean_travel_time_2L/1#mn marker_shape: marker_empty;
 			}
 			chart "Mean Waiting Time at Bus Stops (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.34} x_label: "Time" {
 				data "1-L trips" color: #darkgreen value: mean_waiting_time_1L/1#mn marker_shape: marker_empty;
-				data "2-L trips" color: #gamablue value: mean_waiting_time_2L/1#mn marker_shape: marker_empty;
+				data "2-L trips" color: #darkred value: mean_waiting_time_2L/1#mn marker_shape: marker_empty;
 			}
 			chart "Accumulated Delay (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.67} x_label: "Time" {
@@ -477,6 +490,6 @@ experiment MarraSIM type: gui {
 				data "Theoretical commercial speed" color: #darkgreen value: BusVehicle mean_of(each.bv_line.bl_com_speed) marker_shape: marker_empty;
 				data "Actual simulation speed" color: #darkred value: BusVehicle mean_of(each.bv_actual_speed) marker_shape: marker_empty;
 			}
-		}
+		}*/
 	}
 }

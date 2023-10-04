@@ -36,9 +36,9 @@ species Individual parallel: true {
 	bool ind_moving <- false;
 	bool ind_arrived <- false;
 	list<int> ind_waiting_times <- [0,0];
-	int ind_trip_time <- 0;
+	list<int> ind_trip_times <- [0,0];
 	
-	BusStop ind_waiting_bs; // bus stop where the individual is waiting
+	BusStop ind_waiting_bs <- nil; // bus stop where the individual is waiting
 	list<BusTrip> ind_available_bt <- []; // list of available (possible) bus trips to take between origin and distination
 	BusTrip ind_current_bt <- nil; // current bus trip taken by the individual
 	int ind_current_plan_index <- 0; // the index of the current trip during a multi-trip journey : 0: first trip, 1: second trip 

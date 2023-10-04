@@ -81,26 +81,27 @@ species BusVehicle skills: [moving] {
 				// drop off all passengers who have arrived to their destination
 				int nn <- 0; int mm <- 0;
 				ask bv_passengers where (bv_current_bs = each.ind_current_bt.bt_end_bs) {
-					// add the actual BusTrip to the journey
+					// add the actual BusTrip to the journey 
 					ind_actual_journey <+ ind_current_bt;
 					
 					if ind_current_bt.bt_type != BUS_TRIP_1ST_LINE { // the passenger has arrived
 						myself.bv_current_bs.bs_arrived_people <+ self;
-						ind_trip_time <- int(time - ind_trip_time);
+						ind_trip_times[ind_current_plan_index] <- int(time - ind_trip_times[ind_current_plan_index]);
 						ind_arrived <- true;
 						ind_moving <- false;
 						nn <- nn + 1;
 						unsaved_arrivals <+ self;
-					} 
+					}
 					else { // the passenger is making a connection (transfert)
 						if myself.bv_current_bs != ind_current_bt.bt_end_bs {
 							write "ERROR in connecting at " + myself.bv_current_bs.bs_name + " by " + myself.bv_line.bl_name color:#red;
 						} else {
-						ind_waiting_bs <- myself.bv_current_bs;
-						ind_waiting_bs.bs_waiting_people <+ self;
-						ind_current_plan_index <- ind_current_plan_index + 1;
-						ind_waiting_times[ind_current_plan_index] <- int(time);
-						mm <- mm + 1;
+							ind_trip_times[ind_current_plan_index] <- int(time - ind_trip_times[ind_current_plan_index]);
+							ind_waiting_bs <- myself.bv_current_bs;
+							ind_waiting_bs.bs_waiting_people <+ self;
+							ind_current_plan_index <- ind_current_plan_index + 1;
+							ind_waiting_times[ind_current_plan_index] <- int(time);
+							mm <- mm + 1;
 						}
 					}
 					myself.bv_passengers >- self;					
@@ -123,8 +124,7 @@ species BusVehicle skills: [moving] {
 				int n_individs <- bv_max_capacity - length(bv_passengers);
 				if n_individs > 0 {
 					// list of possible waiting passengers to take
-					list<Individual> waiting_inds <- bv_current_bs.bs_neighbors where !empty(each.bs_waiting_people where
-									each.ind_moving) accumulate each.bs_waiting_people;
+					list<Individual> waiting_inds <- bv_current_bs.bs_neighbors accumulate each.bs_waiting_people; 
 
 					if !empty (waiting_inds) {
 						waiting_inds <- waiting_inds where( (each.ind_current_plan_index = 0 and
@@ -197,21 +197,20 @@ species BusVehicle skills: [moving] {
 							
 							// the individual was waiting for a first ride
 							if ind_current_plan_index = 0 {
-
 								// prefer 1L trips
 								if !transfer_on and int(time - ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS {
 									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
-										with_min_of (each.bt_bus_distance + each.bt_walk_distance);
+										with_min_of (each.bt_bus_distance);
 								}
 								if ind_current_bt = nil {
 									// transfer is on or no 1L trips has been found or the individual has waited for more than 1 hour
-									ind_current_bt <- my_bus_trips with_min_of (each.bt_bus_distance + each.bt_walk_distance);						
-								}								
+									ind_current_bt <- my_bus_trips where (each.bt_type != BUS_TRIP_2ND_LINE)
+										with_min_of (each.bt_bus_distance);
+								}				
 							} else {
 								// the individual is making a second ride
-								ind_current_bt <- ind_available_bt where (each.bt_type= BUS_TRIP_2ND_LINE and 
-										each.bt_bus_line = myself.bv_line and each.bt_bus_direction = myself.bv_current_direction)
-											with_min_of (each.bt_bus_distance + each.bt_walk_distance);
+								ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_2ND_LINE)
+											with_min_of (each.bt_bus_distance);
 							}
 							// a trip has been picked
 							if ind_current_bt !=nil {
@@ -221,7 +220,7 @@ species BusVehicle skills: [moving] {
 								ind_waiting_bs <- nil;
 								ind_waiting_times[ind_current_plan_index] <- int(time - ind_waiting_times[ind_current_plan_index]);
 								if ind_current_plan_index = 0 {
-									ind_trip_time <- int(time);	
+									ind_trip_times[0] <- int(time);	
 								}
 								myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_IND;
 								myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_IND;
