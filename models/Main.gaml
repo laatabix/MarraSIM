@@ -33,7 +33,7 @@ global {
 								0.100,0.100,0.050,0.050,0.050,0.050,0.100,0.050,0.025,0.025,0.025,0.000];// [12:00 ->  23:00]
 	
 	// simulation parameters
-	float step <- 10#second; // defining one simulation step as X seconds
+	float step <- 10#second;// defining one simulation step as X seconds
 	bool save_data_on <- true; // whether to save simulation data (to /outputs) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
@@ -404,9 +404,11 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-		layout /*#split*/ toolbars: false tabs: true editors: false navigator: false parameters: true tray: false consoles: true;
+		//layout /*#split*/ toolbars: false tabs: true editors: false navigator: false parameters: true tray: false consoles: true;
 		
-		/*display Marrakesh type: opengl background: #whitesmoke {
+		 layout horizontal([vertical([0::6508,horizontal([1::5000,2::5000])::3492])::5797,3::4203]) tabs:true toolbars:false editors: false;
+		
+		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
 			overlay position: {10#px,10#px} size: {100#px,40#px} background: #gray{
@@ -490,6 +492,6 @@ experiment MarraSIM type: gui {
 				data "Theoretical commercial speed" color: #darkgreen value: BusVehicle mean_of(each.bv_line.bl_com_speed) marker_shape: marker_empty;
 				data "Actual simulation speed" color: #darkred value: BusVehicle mean_of(each.bv_actual_speed) marker_shape: marker_empty;
 			}
-		}*/
+		}
 	}
 }

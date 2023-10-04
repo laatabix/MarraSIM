@@ -219,9 +219,7 @@ species BusVehicle skills: [moving] {
 								ind_waiting_bs.bs_waiting_people >- self;
 								ind_waiting_bs <- nil;
 								ind_waiting_times[ind_current_plan_index] <- int(time - ind_waiting_times[ind_current_plan_index]);
-								if ind_current_plan_index = 0 {
-									ind_trip_times[0] <- int(time);	
-								}
+								ind_trip_times[ind_current_plan_index] <- int(time);	
 								myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_IND;
 								myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_IND;
 								if myself.bv_current_bs.bs_zone != nil {
@@ -232,10 +230,10 @@ species BusVehicle skills: [moving] {
 								write "ERROR in finding bus trip !" color: #red;
 							}	
 						}
-					}
-					if nn > 0 {
-						write world.formatted_time() + bv_line.bl_name  + ' (' + bv_current_direction + ') is taking ' + nn + ' people at ' + bv_current_bs.bs_name color: #darkgreen;
-						write '  -> Passengers : ' + length(bv_passengers) + " people are on board" color: #darkorange;
+						if nn > 0 {
+							write world.formatted_time() + bv_line.bl_name  + ' (' + bv_current_direction + ') is taking ' + nn + ' people at ' + bv_current_bs.bs_name color: #darkgreen;
+							write '  -> Passengers : ' + length(bv_passengers) + " people are on board" color: #darkorange;
+						}
 					}	
 				}
 			}

@@ -50,7 +50,7 @@ species PDUZone schedules: [] parallel: true {
 				(wp < PDUZ_WP_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wp < PDUZ_WP_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
 		
 		//  compute mean waiting time 
-		int wt <- int(mean(BusStop where (each.bs_zone = self) accumulate (each.bs_waiting_people collect sum(each.ind_waiting_times))));
+		int wt <- int(BusStop where (each.bs_zone = self) mean_of (each.bs_waiting_people collect sum(each.ind_waiting_times)));
 		
 		// pick color
 		pduz_wt_col <- wt < PDUZ_WT_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wt < PDUZ_WT_THRESHOLDS[1] ? PDUZ_COLORS[1] :
