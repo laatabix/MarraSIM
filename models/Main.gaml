@@ -34,7 +34,7 @@ global {
 	
 	// simulation parameters
 	float step <- 10#second;// defining one simulation step as X seconds
-	bool save_data_on <- true; // whether to save simulation data (to /outputs) or not
+	bool save_data_on <- false; // whether to save simulation data (to /outputs) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
@@ -317,12 +317,14 @@ global {
 		// each X minutes
 		// ask a random number of people (N%) to travel 
 		int nn <- int(current_affluence / (60/Nminutes) * length(Individual));
-		write formatted_time() + nn + " new people are travelling ...";
-		ask nn among (Individual where !(each.ind_moving or each.ind_arrived)) {
-			ind_moving <- true;
-			ind_waiting_bs <- ind_origin_bs;
-			ind_waiting_bs.bs_waiting_people <+ self;
-			ind_waiting_times[0] <- int(time);
+		if nn > 0 {
+			write formatted_time() + nn + " new people are travelling ...";
+			ask nn among (Individual where !(each.ind_moving or each.ind_arrived)) {
+				ind_moving <- true;
+				ind_waiting_bs <- ind_origin_bs;
+				ind_waiting_bs.bs_waiting_people <+ self;
+				ind_waiting_times[0] <- int(time);
+			}	
 		}
 		write formatted_time()  + "Total people waiting at bus stops : " + BusStop sum_of length(each.bs_waiting_people) color: #purple;
 		

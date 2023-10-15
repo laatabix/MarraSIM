@@ -80,7 +80,7 @@ species BusVehicle skills: [moving] {
 				
 				// drop off all passengers who have arrived to their destination
 				int nn <- 0; int mm <- 0;
-				ask bv_passengers where (bv_current_bs = each.ind_current_bt.bt_end_bs) {
+				ask bv_passengers where (each.ind_current_bt.bt_end_bs = bv_current_bs) {
 					// add the actual BusTrip to the journey 
 					ind_actual_journey <+ ind_current_bt;
 					
