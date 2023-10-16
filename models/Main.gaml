@@ -34,7 +34,7 @@ global {
 	
 	// simulation parameters
 	float step <- 10#second;// defining one simulation step as X seconds
-	bool save_data_on <- false; // whether to save simulation data (to /outputs) or not
+	bool save_data_on <- true; // whether to save simulation data (to /outputs) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
@@ -406,7 +406,6 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-		//layout /*#split*/ toolbars: false tabs: true editors: false navigator: false parameters: true tray: false consoles: true;
 		
 		 layout horizontal([vertical([0::6508,horizontal([1::5000,2::5000])::3492])::5797,3::4203]) tabs:true toolbars:false editors: false;
 		
@@ -426,7 +425,7 @@ experiment MarraSIM type: gui {
 			species BusVehicle;
 		}
 		//----------------------------------------------------------------------------------------------------------------//
-		display "Waiting People" type: opengl background: #whitesmoke{
+		display "Total Waiting People" type: opengl background: #whitesmoke{
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
 			
 			overlay position: {1,0.01} size: {140#px,140#px} background: #gray{
@@ -443,7 +442,7 @@ experiment MarraSIM type: gui {
 			species PDUZone aspect: waiting_people;
 		}
 		//----------------------------------------------------------------------------------------------------------------//
-		display "Waiting Time" type: opengl background: #whitesmoke {
+		display "Mean Waiting Time" type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
 			
 			overlay position: {1,0.01} size: {140#px,140#px} background: #gray{
@@ -473,21 +472,21 @@ experiment MarraSIM type: gui {
 				data "1-Line" color: #darkgreen value: finished_1L_journeys marker_shape: marker_empty;
 				data "2-Lines" color: #darkred value: finished_2L_journeys marker_shape: marker_empty;
 			}
-			chart "Mean Travel Time (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
+			chart "Mean Travelling Time (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.34} x_label: "Time" {
-				data "1-L trips" color: #darkgreen value: mean_travel_time_1L/1#mn marker_shape: marker_empty;
-				data "2-L trips" color: #darkred value: mean_travel_time_2L/1#mn marker_shape: marker_empty;
+				data "Finished 1-L" color: #darkgreen value: mean_travel_time_1L/1#minute marker_shape: marker_empty;
+				data "Finished 2-L" color: #darkred value: mean_travel_time_2L/1#minute marker_shape: marker_empty;
 			}
 			chart "Mean Waiting Time at Bus Stops (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.34} x_label: "Time" {
-				data "1-L trips" color: #darkgreen value: mean_waiting_time_1L/1#mn marker_shape: marker_empty;
-				data "2-L trips" color: #darkred value: mean_waiting_time_2L/1#mn marker_shape: marker_empty;
+				data "Finished 1-L" color: #darkgreen value: mean_waiting_time_1L/1#minute marker_shape: marker_empty;
+				data "Finished 2-L" color: #darkred value: mean_waiting_time_2L/1#minute marker_shape: marker_empty;
 			}
 			chart "Accumulated Delay (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.67} x_label: "Time" {
-				data "Road traffic" color: #darkred value: BusVehicle sum_of(each.bv_accumulated_traffic_delay)/1#mn marker_shape: marker_empty;
-				data "Traffic signs" color: #darkblue value: BusVehicle sum_of(each.bv_accumulated_signs_delay)/1#mn marker_shape: marker_empty;
-				data "Passengers" color: #darkviolet value: BusVehicle sum_of(each.bv_accumulated_passaging_delay)/1#mn marker_shape: marker_empty;
+				data "Road traffic" color: #darkred value: BusVehicle sum_of(each.bv_accumulated_traffic_delay)/1#minute marker_shape: marker_empty;
+				data "Traffic signs" color: #darkblue value: BusVehicle sum_of(each.bv_accumulated_signs_delay)/1#minute marker_shape: marker_empty;
+				data "Passengers" color: #darkviolet value: BusVehicle sum_of(each.bv_accumulated_passaging_delay)/1#minute marker_shape: marker_empty;
 			}
 			chart "Mean of Bus Speed (km/h)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.67} x_label: "Time" {

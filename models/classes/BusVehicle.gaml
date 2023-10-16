@@ -165,22 +165,39 @@ species BusVehicle skills: [moving] {
 							list<Individual> inds_to_remove <- [];
 							
 							loop indiv over: waiting_inds {
-								// time to arrive to first destination using this bus
-								float time_to_dest_this <- min(indiv.ind_available_bt where (each.bt_end_bs in bv_time_table.keys) 
-																		collect (bv_time_table at each.bt_end_bs));
-								float min_time_to_dest_others <- #max_float;
-								// TODO get time to final destination following the BT to consider 2L-trips
-								// TODO not only to the final bus stop using this line (1L) (it may be a transfer)
-								loop bt over: indiv.ind_available_bt {
-									float tt <- min(BusVehicle where (each.bv_line = bt.bt_bus_line and each.bv_current_direction = bt.bt_bus_direction)
-												where (bt.bt_end_bs in each.bv_time_table.keys) accumulate (each.bv_time_table at bt.bt_end_bs));
-									if tt < min_time_to_dest_others {
-										min_time_to_dest_others <- tt;
+								
+								// time to arrive to destination using this bus
+								float time_to_dest_this <-#max_float;
+								list<BusTrip> btps <- indiv.ind_available_bt where (each.bt_type != BUS_TRIP_1ST_LINE and
+													each.bt_end_bs in bv_time_table.keys);
+								if !empty(btps) {
+									time_to_dest_this <- min(btps collect (bv_time_table at each.bt_end_bs));
+									
+									float min_time_to_dest_others <- #max_float;
+									loop bt over: indiv.ind_available_bt where (each.bt_type != BUS_TRIP_1ST_LINE) {
+										// other busses that can serve this trip
+										list<BusVehicle> bvs <- BusVehicle where (each.bv_line != self.bv_line and !empty(each.bv_time_table)
+											 and each.bv_line = bt.bt_bus_line and each.bv_current_direction = bt.bt_bus_direction);
+										if !empty(bvs) {
+											// only bus vehicles who did not reach this bus stop yet
+											if bt.bt_bus_direction = BL_DIRECTION_OUTGOING {
+												bvs <- bvs where (each.bv_line.bl_outgoing_bs index_of each.bv_current_bs < 
+													each.bv_line.bl_outgoing_bs index_of self.bv_current_bs);
+											} else {
+												bvs <- bvs where (each.bv_line.bl_return_bs index_of each.bv_current_bs < 
+													each.bv_line.bl_return_bs index_of self.bv_current_bs);
+											}
+											if !empty(bvs) {
+												float tt <- min(bvs where (bt.bt_end_bs in each.bv_time_table.keys) accumulate (each.bv_time_table at bt.bt_end_bs));
+												if tt < min_time_to_dest_others {
+													min_time_to_dest_others <- tt;
+												}
+											}	
+										}
 									}
-								}
-								// end TODO
-								if min_time_to_dest_others < time_to_dest_this {
-									inds_to_remove <+ indiv;
+									if min_time_to_dest_others < time_to_dest_this {
+										inds_to_remove <+ indiv;
+									}	
 								}
 							}
 							// remove
