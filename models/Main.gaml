@@ -482,11 +482,11 @@ experiment MarraSIM type: gui {
 				data "Finished 1-L" color: #darkgreen value: mean_waiting_time_1L/1#minute marker_shape: marker_empty;
 				data "Finished 2-L" color: #darkred value: mean_waiting_time_2L/1#minute marker_shape: marker_empty;
 			}
-			chart "Accumulated Delay (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
+			chart "Mean Accumulated Delay (m)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0,0.67} x_label: "Time" {
-				data "Road traffic" color: #darkred value: BusVehicle sum_of(each.bv_accumulated_traffic_delay)/1#minute marker_shape: marker_empty;
-				data "Traffic signs" color: #darkblue value: BusVehicle sum_of(each.bv_accumulated_signs_delay)/1#minute marker_shape: marker_empty;
-				data "Passengers" color: #darkviolet value: BusVehicle sum_of(each.bv_accumulated_passaging_delay)/1#minute marker_shape: marker_empty;
+				data "Road traffic" color: #darkred value: BusVehicle mean_of(each.bv_accumulated_traffic_delay)/1#minute marker_shape: marker_empty;
+				data "Traffic signs" color: #darkblue value: BusVehicle mean_of(each.bv_accumulated_signs_delay)/1#minute marker_shape: marker_empty;
+				data "Passengers" color: #darkviolet value: BusVehicle mean_of(each.bv_accumulated_passaging_delay)/1#minute marker_shape: marker_empty;
 			}
 			chart "Mean of Bus Speed (km/h)" type: series y_tick_line_visible: true x_tick_line_visible: false
 				background: #whitesmoke color: #black size: {0.5,0.33} position: {0.5,0.67} x_label: "Time" {
