@@ -20,6 +20,9 @@ global {
 	// the color of each traffic level
 	list<rgb> G_TRAFF_COLORS <- [#transparent, #green, #orange, #red, #darkred]; // index 0 is unused
 	
+	// max allowed traffic level to simulate limiting congestion.
+	int G_TRAFF_LEVEL_MAX <- G_TRAFF_LEVEL_DARKRED;
+	
 	// use or not congestion from Google Traffic
 	bool traffic_on <- true;
 	

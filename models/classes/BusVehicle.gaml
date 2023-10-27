@@ -23,6 +23,8 @@ global {
 	// the mininmum time to drop off a passenger
 	float BV_TIME_DROP_IND <- 5#second;
 	
+	// How to decrease vehicle speed based on traffic level [evey value corresponds to a traff level, 0 is unused]
+	list<float> BV_SPEED_DIVIDER <- [0,1,1.5,2,2.5];
 }
 
 /*******************************/
@@ -33,7 +35,7 @@ species BusVehicle skills: [moving] {
 	BusLine bv_line;
 	int bv_current_direction;
 	BusStop bv_current_bs;
-	BusStop bv_next_stop;
+	BusStop bv_next_bs;
 	float bv_actual_speed;
 	float bv_stop_wait_time <- -1.0;
 	bool bv_in_city <- true;
@@ -45,9 +47,8 @@ species BusVehicle skills: [moving] {
 	TrafficSignal bv_current_traff_sign <- nil; // when the vehicle stops at a traffic signal
 	RoadSegment bv_current_rd_segment <- nil;
 	list<Individual> bv_passengers <- [];
-	
 	map<BusStop,float> bv_time_table <- [];
-	
+		
 	// stats
 	float bv_accumulated_traffic_delay <- 0.0;
 	float bv_accumulated_signs_delay <- 0.0;
@@ -69,14 +70,24 @@ species BusVehicle skills: [moving] {
 		bv_current_rd_segment <- RoadSegment(current_edge);
 		
 		// the bus has reached its next bus stop
-		if location overlaps (10#meter around bv_next_stop.location) {
+		if location overlaps (10#meter around bv_next_bs.location) {
+
 		 	bv_stop_wait_time <- BV_MIN_WAIT_TIME_BS;
 		 	bv_in_move <- false;
-			bv_current_bs <- bv_next_stop;
-			bv_current_bs.bs_current_stopping_buses <+ self;			
-			
+			bv_current_bs <- bv_next_bs;
+			bv_current_bs.bs_current_stopping_buses <+ self;	
+								
 			// the bus is in a bus stop inside the city
 			if bv_in_city {
+				// add the delay for this bus
+				ask bv_current_bs {
+					float del <- time - (myself.bv_time_table at self);
+					if bs_bv_delays at myself = nil {
+						bs_bv_delays <+ myself::del; 
+					} else {
+						bs_bv_delays[myself] <- bs_bv_delays[myself] + del; 
+					}
+				}
 				
 				// drop off all passengers who have arrived to their destination
 				int nn <- 0; int mm <- 0;
@@ -119,7 +130,7 @@ species BusVehicle skills: [moving] {
 					}
 					write '  -> ' + length(bv_passengers) + " people are on board" color: #darkorange;
 				}
-				
+
 				// take the maximum number of passengers
 				int n_individs <- bv_max_capacity - length(bv_passengers);
 				if n_individs > 0 {
@@ -147,7 +158,7 @@ species BusVehicle skills: [moving] {
 							list<Individual> inds_to_remove <- (waiting_inds where (each.ind_current_plan_index = 0 and
 								empty(each.ind_available_bt where (each.bt_bus_line = bv_line and
 								each.bt_bus_direction = bv_current_direction and each.bt_type = BUS_TRIP_SINGLE_LINE))));
-							
+												
 							// see if these individuals can do a 1L-trip on another bus
 							if !empty(inds_to_remove) {
 								// individuals with 1L trip on other busses and who can still wait for 1L trip
@@ -218,6 +229,8 @@ species BusVehicle skills: [moving] {
 								if !transfer_on and int(time - ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS {
 									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
 										with_min_of (each.bt_bus_distance);
+								} else {
+									
 								}
 								if ind_current_bt = nil {
 									// transfer is on or no 1L trips has been found or the individual has waited for more than 1 hour
@@ -258,22 +271,22 @@ species BusVehicle skills: [moving] {
 			if bv_current_direction = BL_DIRECTION_OUTGOING { // outgoing
 				if bv_current_bs = last(bv_line.bl_outgoing_bs) { // last outgoing stop
 					bv_current_direction <- BL_DIRECTION_RETURN;
-					bv_next_stop <- bv_line.bl_return_bs[0];
+					bv_next_bs <- bv_line.bl_return_bs[0];
 				} else {
 					// first outgoing stop : filling timetable of outgoing
 					if bv_current_bs = first(bv_line.bl_outgoing_bs) {
-						bv_time_table <- [bv_line.bl_outgoing_bs[0]:: time];
+						bv_time_table <- [bv_line.bl_outgoing_bs[0]::time];
 						loop i from: 1 to: length(bv_line.bl_outgoing_bs)-1 {
 							bv_time_table <+ bv_line.bl_outgoing_bs[i] :: bv_time_table at bv_line.bl_outgoing_bs[i-1] +
 										(bv_line.bl_outgoing_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
 						}	
 					}
-					bv_next_stop <- bv_line.bl_outgoing_bs[(bv_line.bl_outgoing_bs index_of bv_next_stop) + 1];
+					bv_next_bs <- bv_line.bl_outgoing_bs[(bv_line.bl_outgoing_bs index_of bv_next_bs) + 1];
 				}
 			} else { // return
 				if bv_current_bs = last(bv_line.bl_return_bs) { // last return stop
 					bv_current_direction <- BL_DIRECTION_OUTGOING;
-					bv_next_stop <- bv_line.bl_outgoing_bs[0];
+					bv_next_bs <- bv_line.bl_outgoing_bs[0];
 				} else {
 					// first return stop : filling timetable of return
 					if bv_current_bs = first(bv_line.bl_return_bs) {
@@ -283,7 +296,7 @@ species BusVehicle skills: [moving] {
 										(bv_line.bl_return_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
 						}	
 					}
-					bv_next_stop <- bv_line.bl_return_bs[(bv_line.bl_return_bs index_of bv_next_stop) + 1];
+					bv_next_bs <- bv_line.bl_return_bs[(bv_line.bl_return_bs index_of bv_next_bs) + 1];
 				}
 			}
 			return;
@@ -312,15 +325,17 @@ species BusVehicle skills: [moving] {
 				bv_current_traff_sign <- nil;
 			}
 		}
+
 		if bv_current_rd_segment != nil {
+
 			bv_in_city <- bv_current_rd_segment.rs_in_city;
 			// a bus moves with the commercial speed inside Marrakesh, and BV_SUBURBAN_SPEED outside;
 			if bv_in_city {
 				// if it is not a BRT
 				if traffic_on and !bv_line.bl_is_brt {
 					// only non BRT busses are impacted by traffic level
-					bv_actual_speed <- bv_line.bl_com_speed / bv_current_rd_segment.rs_traffic_level;
-					if bv_actual_speed != bv_line.bl_com_speed {
+					bv_actual_speed <- bv_line.bl_com_speed / BV_SPEED_DIVIDER[bv_current_rd_segment.rs_traffic_level];
+					if bv_actual_speed < bv_line.bl_com_speed {
 						float traff_del <- ((bv_line.bl_com_speed - bv_actual_speed)/bv_line.bl_com_speed)*step;
 						bv_accumulated_traffic_delay <- bv_accumulated_traffic_delay + traff_del;
 						if bv_current_rd_segment.rs_zone != nil {
@@ -337,7 +352,8 @@ species BusVehicle skills: [moving] {
 				bv_actual_speed <- BV_SUBURBAN_SPEED;
 			}	
 		}
-		do goto on: road_network target: bv_next_stop speed: bv_actual_speed;
+		// move
+		do goto on: road_network target: bv_next_bs speed: bv_actual_speed;
 	}
 	
 	//

@@ -21,6 +21,9 @@ global {
 	// theresholds to color PDU zones depending on the mean waiting time on bus stops
 	list<float> PDUZ_WT_THRESHOLDS <- [15#mn,30#mn,45#mn,60#mn,90#mn,120#mn];
 	
+	// theresholds to color PDU zones depending on the mean bus delay time on bus stops
+	list<float> PDUZ_BD_THRESHOLDS <- [10#mn,15#mn,20#mn,25#mn,30#mn,45#mn];
+	
 }
 
 /*******************************/
@@ -33,6 +36,7 @@ species PDUZone schedules: [] parallel: true {
 	District pduz_district;
 	rgb pduz_wp_col <- #white;
 	rgb pduz_wt_col <- #white;
+	rgb pduz_bd_col <- #white;
 	
 	// stats
 	float pduz_accumulated_traffic_delay <- 0.0;
@@ -50,15 +54,22 @@ species PDUZone schedules: [] parallel: true {
 				(wp < PDUZ_WP_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wp < PDUZ_WP_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
 		
 		//  compute mean waiting time 
-		int wt <- int(mean(BusStop where (each.bs_zone = self)
-						accumulate (each.bs_waiting_people accumulate sum(each.ind_waiting_times))));
+		list<Individual> indivs <- BusStop where (each.bs_zone = self) accumulate (each.bs_waiting_people);
+		list<float> wtimes <- indivs where (each.ind_current_plan_index = 0) accumulate (time - each.ind_waiting_times[0]);
+		wtimes <<+ indivs where (each.ind_current_plan_index = 1) accumulate (each.ind_waiting_times[0] + (time - each.ind_waiting_times[1]));
+		int wt <- int(mean(wtimes));
 		
-		// pick color
 		pduz_wt_col <- wt < PDUZ_WT_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wt < PDUZ_WT_THRESHOLDS[1] ? PDUZ_COLORS[1] :
 			(wt < PDUZ_WT_THRESHOLDS[2] ? PDUZ_COLORS[2] : (wt < PDUZ_WT_THRESHOLDS[3] ? PDUZ_COLORS[3] :
 				(wt < PDUZ_WT_THRESHOLDS[4] ? PDUZ_COLORS[4] : (wt < PDUZ_WT_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
-
-		return [wp,wt];
+				
+		int bd <- int(mean(BusStop where (each.bs_zone = self) collect mean(each.bs_bv_delays)));
+		// pick color
+		pduz_bd_col <- bd < PDUZ_BD_THRESHOLDS[0] ? PDUZ_COLORS[0] : (bd < PDUZ_BD_THRESHOLDS[1] ? PDUZ_COLORS[1] :
+			(bd < PDUZ_BD_THRESHOLDS[2] ? PDUZ_COLORS[2] : (bd < PDUZ_BD_THRESHOLDS[3] ? PDUZ_COLORS[3] :
+				(bd < PDUZ_BD_THRESHOLDS[4] ? PDUZ_COLORS[4] : (bd < PDUZ_BD_THRESHOLDS[5] ? PDUZ_COLORS[5] : PDUZ_COLORS[6])))));
+		
+		return [wp,wt,bd];
 	}
 	
 	// aspects
@@ -68,6 +79,10 @@ species PDUZone schedules: [] parallel: true {
 	
 	aspect waiting_time {
 		draw shape color: pduz_wt_col border: #black;
+	}
+	
+	aspect bus_delay {
+		draw shape color: pduz_bd_col border: #black;
 	}
 }
 

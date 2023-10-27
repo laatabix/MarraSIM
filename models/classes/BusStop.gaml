@@ -36,6 +36,8 @@ species BusStop schedules: [] parallel: true{
 	list<Individual> bs_arrived_people <- []; // list of people that ended their trips at the bus stop
 	list<BusVehicle> bs_current_stopping_buses; // list of current busses that are stopping at the bus stop
 	
+	map<BusVehicle,float> bs_bv_delays <- [];
+	
 	//calculate distance between two bus stops
 	int dist_to_bs (BusStop bs2) {
 		try {

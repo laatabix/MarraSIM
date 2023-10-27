@@ -34,7 +34,7 @@ global {
 	
 	// simulation parameters
 	float step <- 10#second;// defining one simulation step as X seconds
-	bool save_data_on <- true; // whether to save simulation data (to /outputs) or not
+	bool save_data_on <- false; // whether to save simulation data (to /outputs) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
@@ -157,6 +157,7 @@ global {
 				try {
 					geom <- path_between(road_network, bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
 				} catch {
+					write "Line "+bl_name + " (OUTGOING): road segment is nil between " +  bl_outgoing_bs[i].bs_name + " :: " + bl_outgoing_bs[i+1].bs_name color:#red;
 					geom <- path_to(bl_outgoing_bs[i], bl_outgoing_bs[i+1]).shape;
 				}
 				bl_outgoing_dists <+ geom.perimeter;
@@ -166,6 +167,7 @@ global {
 				try {
 					geom <- path_between(road_network, bl_return_bs[i], bl_return_bs[i+1]).shape;
 				} catch {
+					write "Line "+ bl_name + " (RETURN): road segment is nil between " +  bl_return_bs[i].bs_name + " :: " + bl_return_bs[i+1].bs_name color:#red;
 					geom <- path_to(bl_return_bs[i], bl_return_bs[i+1]).shape;
 				}
 				bl_return_dists <+ geom.perimeter;
@@ -218,7 +220,7 @@ global {
 					bv_line <- myself;				
 					bv_current_bs <- bv_line.bl_outgoing_bs[0];
 					bv_current_bs.bs_current_stopping_buses <+ self;
-					bv_next_stop <- bv_current_bs;
+					bv_next_bs <- bv_current_bs;
 					bv_current_direction <- BL_DIRECTION_OUTGOING;
 					location <- bv_current_bs.location;
 					bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
@@ -227,7 +229,7 @@ global {
 				ask last (BusVehicle where (each.bv_line = self)) {
 					bv_current_bs <- bv_line.bl_return_bs[0];
 					bv_current_bs.bs_current_stopping_buses <+ self;
-					bv_next_stop <- bv_current_bs;
+					bv_next_bs <- bv_current_bs;
 					bv_current_direction <- BL_DIRECTION_RETURN;
 					location <- bv_current_bs.location;
 					bv_stop_wait_time <- 0.0;
@@ -236,7 +238,7 @@ global {
 		}
 		
 		// create the population of moving individuals between PUDZones
-		write "Creating population ...";
+		/*write "Creating population ...";
 		dataMatrix <- matrix(csv_file("../includes/csv/populations_5000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
@@ -269,7 +271,7 @@ global {
 				bt_walk_distance <- int(dataMatrix[7,i]);
 				indiv_x.ind_available_bt <+ self;	
 			}
-		}
+		}*/
 		
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
@@ -299,7 +301,7 @@ global {
 				if traffic_on {
 					matrix rd_traff_data <- matrix(csv_file("../includes/csv/roads_traffic/" + hh + ".csv",true));
 					ask RoadSegment where (each.rs_in_city) {
-						rs_traffic_level <- int(rd_traff_data[1,rs_id]);
+						rs_traffic_level <- min([int(rd_traff_data[1,rs_id]), G_TRAFF_LEVEL_MAX]);
 						rs_col <- G_TRAFF_COLORS[rs_traffic_level];
 					}
 				}
@@ -333,7 +335,7 @@ global {
 		ask PDUZone {
 			list<int> indicators <- update_color(); // waiting times and people
 			if save_data_on {
-				save '' + cycle + ',' + pduz_code + ',' + indicators[0] + ',' + indicators[1] + ',' +
+				save '' + cycle + ',' + pduz_code + ',' + indicators[0] + ',' + indicators[1] + ',' + indicators[2] + ',' +
 					pduz_accumulated_traffic_delay + ',' + pduz_accumulated_passaging_delay + ',' + pduz_accumulated_signs_delay 
 									format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/pduzones.csv";
 			}
@@ -397,6 +399,7 @@ experiment MarraSIM type: gui {
 	parameter "Show BRT Lines" category:"Simulation" var: show_brt_lines;
 	text "Save data parameter is " + save_data_on category:"Simulation" color: #darkred font: font("Tahoma",10,#bold);
 	parameter "Use Google Traffic" category:"Road Traffic" var: traffic_on;
+	text "Max traffic level is " + G_TRAFF_LEVEL_MAX category:"Road Traffic" color: #darkred font: font("Tahoma",10,#bold);
 	parameter "Free Transfer" category:"Bus network" var: transfer_on;
 	parameter "Time tables" category:"Bus network" var: time_tables_on;
 	text "Use BRT parameter is " + use_brt_lines category:"Bus network" color: #darkred font: font("Tahoma",10,#bold);
@@ -406,9 +409,7 @@ experiment MarraSIM type: gui {
 	}
 	
 	output {
-		
-		 layout horizontal([vertical([0::6508,horizontal([1::5000,2::5000])::3492])::5797,3::4203]) tabs:true toolbars:false editors: false;
-		
+				 
 		display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
@@ -457,6 +458,23 @@ experiment MarraSIM type: gui {
 	        }
 	        
 			species PDUZone aspect: waiting_time;
+		}
+		//----------------------------------------------------------------------------------------------------------------//
+		display "Mean Bus Delays" type: opengl background: #whitesmoke {
+			camera 'default' location: {76609.6582,72520.8497,25375.9837} target: {76609.6582,72520.4068,0.0};
+			
+			overlay position: {1,0.01} size: {140#px,140#px} background: #gray{
+	        	draw "Bus delay (m)" at: {20#px, 15#px} font: AFONT0 color: #white;
+	        	
+	        	 loop i from: 0 to: length(PDUZ_WT_THRESHOLDS)-1 {
+                    draw square(10#px) at: {20#px,(30+(15*i))#px} color: PDUZ_COLORS[i];
+                    draw '<' + int(PDUZ_WT_THRESHOLDS[i]/60) at: {40#px,(33+(15*i))#px} color: #yellow font: AFONT0;
+                }
+                draw square(10#px) at: {20#px,(30+(15*length(PDUZ_WT_THRESHOLDS)))#px} color: last(PDUZ_COLORS);
+                draw '>' + int(last(PDUZ_WT_THRESHOLDS)/60) at: {40#px,(33+(15*length(PDUZ_WT_THRESHOLDS)))#px} color: #yellow font: AFONT0;
+	        }
+	        
+			species PDUZone aspect: bus_delay;
 		}
 		//----------------------------------------------------------------------------------------------------------------//
 		display Mobility type: java2D background: #whitesmoke {
