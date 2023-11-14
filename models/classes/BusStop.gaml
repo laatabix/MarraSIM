@@ -14,7 +14,7 @@ import "District.gaml"
 global {
 	
 	// All bus stops around this distance can be used to take/leave a bus or transfer between busses
-	float BS_NEIGHBORING_DISTANCE <- 500#m;
+	float BS_NEIGHBORING_DISTANCE <- 400#m;
 }
 
 /*******************************/

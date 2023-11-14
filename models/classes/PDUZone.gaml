@@ -56,7 +56,7 @@ species PDUZone schedules: [] parallel: true {
 		//  compute mean waiting time 
 		list<Individual> indivs <- BusStop where (each.bs_zone = self) accumulate (each.bs_waiting_people);
 		list<float> wtimes <- indivs where (each.ind_current_plan_index = 0) accumulate (time - each.ind_waiting_times[0]);
-		wtimes <<+ indivs where (each.ind_current_plan_index = 1) accumulate (each.ind_waiting_times[0] + (time - each.ind_waiting_times[1]));
+		wtimes <<+ indivs where (each.ind_current_plan_index = 1) accumulate (time - each.ind_waiting_times[1]);
 		int wt <- int(mean(wtimes));
 		
 		pduz_wt_col <- wt < PDUZ_WT_THRESHOLDS[0] ? PDUZ_COLORS[0] : (wt < PDUZ_WT_THRESHOLDS[1] ? PDUZ_COLORS[1] :

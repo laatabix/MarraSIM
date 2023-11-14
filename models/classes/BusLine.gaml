@@ -17,13 +17,8 @@ global {
 	// colors to color bus lines when displayed
 	list<rgb> BL_COLORS <- [#darkblue,#darkcyan,#darkgoldenrod,#darkgray,#darkkhaki,#darkmagenta,#darkolivegreen,#darkorchid,
 								#darksalmon,#darkseagreen,#darkslateblue,#darkslategray,#darkturquoise,#darkviolet];
-	// display or not buslines (instead of roads with traffic levels)
-	bool show_buslines <- false;
+
 	//font LFONT0 <- font("Arial", 5, #bold);
-	
-	// whether BRT lines are activated or not
-	bool use_brt_lines <- false;
-	bool show_brt_lines <- false; // display or not BRT lines
 }
 
 /*******************************/
@@ -50,7 +45,7 @@ species BusLine schedules: [] parallel: true {
 			bc_bus_lines <- [myself, bl2];
 			bc_bus_stops <-[bs1,bs2];
 			bc_bus_directions <- [dir1,dir2];
-			bc_connection_distance <- cd = -1 ? bc_bus_stops[0].dist_to_bs(bc_bus_stops[1]) : cd;
+			bc_connection_distance <- cd;
 			if dir1 = BL_DIRECTION_OUTGOING {
 				myself.bl_outgoing_connections <+ self;
 			} else {

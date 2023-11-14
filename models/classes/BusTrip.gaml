@@ -17,9 +17,6 @@ global {
 	int BUS_TRIP_2ND_LINE <- 3;
 	// whether or not the trip uses a BRT line
 	bool BUS_TRIP_BRT <- false;
-	
-	// allow ticket transfer between busses of the same trip (when false, promotes 1L-trips over 2L-trips) 
-	bool transfer_on <- false; 
 }
 
 /*******************************/

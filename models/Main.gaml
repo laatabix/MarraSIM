@@ -10,7 +10,7 @@
 */
 
 model MarraSIM
-
+import "Params.gaml"
 import "classes/PDUZone.gaml"
 import "classes/Building.gaml"
 
@@ -34,7 +34,6 @@ global {
 	
 	// simulation parameters
 	float step <- 10#second;// defining one simulation step as X seconds
-	bool save_data_on <- false; // whether to save simulation data (to /outputs) or not
 	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
@@ -68,7 +67,7 @@ global {
 			}
 		} else {
 			sim_id <- machine_time;
-			save "cycle,pduzone,w_people,w_time,traf_del,pass_del,sign_del" 
+			save "cycle,pduzone,w_people,w_time,bus_del,traf_del,pass_del,sign_del" 
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/pduzones.csv";
 			save "cycle,waiting1st,waiting2nd,onboard,arrived" 
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/individuals.csv";
@@ -85,10 +84,9 @@ global {
 		create District from: marrakesh_districts with: [dist_code::int(get("ID")), dist_name::get("NAME")];
 		create Building from: marrakesh_buildings;
 		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
-		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))]{
-			if rs_in_city {
-				rs_zone <- first(PDUZone overlapping self);	
-			}
+		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id"))]{
+			rs_zone <- first(PDUZone overlapping self);
+			rs_in_city <- rs_zone != nil;
 		}
 		road_network <- as_edge_graph(list(RoadSegment));
 				
@@ -108,13 +106,6 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
-			// affect the closest zone to nearby bus stops
-			if bs_zone = nil {
-				PDUZone pdz <- PDUZone closest_to self;
-				if self distance_to pdz <= BS_NEIGHBORING_DISTANCE {
-					bs_zone <- pdz;
-				}
-			}
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
@@ -211,12 +202,12 @@ global {
 			if dataMatrix index_of bl_name != nil {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
 				bl_interval_time_m <- float(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
-				bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
+				//bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
 				bl_is_brt <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]) = 1;
 			}
 			if !bl_is_brt or use_brt_lines { 
 				int i_counter <- 0;
-				create BusVehicle number: n_vehicles {
+				create BusVehicle number: n_vehicles/2 {
 					bv_line <- myself;				
 					bv_current_bs <- bv_line.bl_outgoing_bs[0];
 					bv_current_bs.bs_current_stopping_buses <+ self;
@@ -225,20 +216,23 @@ global {
 					location <- bv_current_bs.location;
 					bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
 					i_counter <- i_counter + 1;
-				}	
-				ask last (BusVehicle where (each.bv_line = self)) {
+				}
+				i_counter <- 0;
+				create BusVehicle number: n_vehicles/2 {
+					bv_line <- myself;				
 					bv_current_bs <- bv_line.bl_return_bs[0];
 					bv_current_bs.bs_current_stopping_buses <+ self;
 					bv_next_bs <- bv_current_bs;
 					bv_current_direction <- BL_DIRECTION_RETURN;
 					location <- bv_current_bs.location;
-					bv_stop_wait_time <- 0.0;
+					bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
+					i_counter <- i_counter + 1;
 				}
 			}		
 		}
 		
 		// create the population of moving individuals between PUDZones
-		/*write "Creating population ...";
+		write "Creating population ...";
 		dataMatrix <- matrix(csv_file("../includes/csv/populations_5000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
@@ -271,7 +265,7 @@ global {
 				bt_walk_distance <- int(dataMatrix[7,i]);
 				indiv_x.ind_available_bt <+ self;	
 			}
-		}*/
+		}
 		
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
@@ -405,12 +399,12 @@ experiment MarraSIM type: gui {
 	text "Use BRT parameter is " + use_brt_lines category:"Bus network" color: #darkred font: font("Tahoma",10,#bold);
 	
 	init {
-		minimum_cycle_duration <- 0.05;
+		minimum_cycle_duration <- 0.0;
 	}
 	
 	output {
 				 
-		display Marrakesh type: opengl background: #whitesmoke {
+		/*display Marrakesh type: opengl background: #whitesmoke {
 			camera 'default' location: {76609.6582,72520.6097,11625.0305} target: {76609.6582,72520.4068,0.0};
 			
 			overlay position: {10#px,10#px} size: {100#px,40#px} background: #gray{
@@ -511,6 +505,6 @@ experiment MarraSIM type: gui {
 				data "Theoretical commercial speed" color: #darkgreen value: BusVehicle mean_of(each.bv_line.bl_com_speed) marker_shape: marker_empty;
 				data "Actual simulation speed" color: #darkred value: BusVehicle mean_of(each.bv_actual_speed) marker_shape: marker_empty;
 			}
-		}
+		}*/
 	}
 }

@@ -27,10 +27,9 @@ global {
 		create District from: marrakesh_districts with: [dist_code::int(get("ID")), dist_name::get("NAME")];
 		//create Building from: marrakesh_buildings;
 		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
-		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))]{
-			if rs_in_city {
-				rs_zone <- first(PDUZone overlapping self);	
-			}
+		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id"))]{
+			rs_zone <- first(PDUZone overlapping self);
+			rs_in_city <- rs_zone != nil;
 		}
 		road_network <- as_edge_graph(list(RoadSegment));
 
@@ -41,13 +40,6 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
-			// affect the closest zone to nearby bus stops
-			if bs_zone = nil {
-				PDUZone pdz <- PDUZone closest_to self;
-				if self distance_to pdz <= BS_NEIGHBORING_DISTANCE {
-					bs_zone <- pdz;
-				}
-			}
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
@@ -164,30 +156,30 @@ global {
 		write "Creating travel plans ..";
 		ask Individual {
 			// if another individual with the same origin and destination bus stops has already a planning, just copy it
-			Individual ind <- first(Individual where (!empty(each.ind_available_bt) and
+			Individual indiv <- first(Individual where (!empty(each.ind_available_bt) and
 							each.ind_origin_bs = self.ind_origin_bs and each.ind_destin_bs = self.ind_destin_bs));
-			if ind != nil {
-				self.ind_available_bt <- copy (ind.ind_available_bt);	
+			if indiv != nil {
+				self.ind_available_bt <- copy (indiv.ind_available_bt);	
 			} else { // else, compute
 				do make_plans;
 			}
-			//write ind_id;
+			write ind_id; // watch processing ...
 		}
 		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));	
 		
 		write "Recomputing planning for individuals without plans..";
-		ask Individual where empty(each.ind_available_bt) {
-			Individual ind <- one_of(Individual where (!empty(each.ind_available_bt) and
+		ask Individual where (empty(each.ind_available_bt)) {
+			Individual indiv <- one_of(Individual where (!empty(each.ind_available_bt) and
 							each.ind_origin_zone = self.ind_origin_zone and each.ind_destin_zone = self.ind_destin_zone));
-			if ind = nil {
-				ind <- one_of(Individual where (!empty(each.ind_available_bt)));
+			if indiv = nil {
+				indiv <- one_of(Individual where (!empty(each.ind_available_bt)));
 			}
-			if ind != nil {
-				self.ind_origin_zone <- ind.ind_origin_zone;
-				self.ind_origin_bs <- ind.ind_origin_bs;
-				self.ind_destin_zone <- ind.ind_destin_zone;
-				self.ind_destin_bs <- ind.ind_destin_bs;
-				self.ind_available_bt <- copy(ind.ind_available_bt);	
+			if indiv != nil {
+				self.ind_origin_zone <- indiv.ind_origin_zone;
+				self.ind_origin_bs <- indiv.ind_origin_bs;
+				self.ind_destin_zone <- indiv.ind_destin_zone;
+				self.ind_destin_bs <- indiv.ind_destin_bs;
+				self.ind_available_bt <- copy(indiv.ind_available_bt);	
 			} else {
 				do die;
 			}

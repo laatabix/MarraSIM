@@ -12,6 +12,8 @@ import "../classes/BusLine.gaml"
 
 global {
 	
+	file marrakesh_pdu <- shape_file("../includes/gis/zonage_pdu.shp"); // PDU (Plan de Déplacement Urbain) zoning
+	file marrakesh_districts <- shape_file("../includes/gis/marrakesh.shp"); // administrative districts
 	file marrakesh_bus_stops <- shape_file("../../includes/gis/bus_stops.shp");
 	file marrakesh_roads <- shape_file("../../includes/gis/road_segments.shp");
 	matrix bustopsMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
@@ -24,13 +26,14 @@ global {
 		
 		// create the environment: city, districts, roads, traffic signals
 		write "Creating the city environment ...";
-		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id")), rs_in_city::bool(int(get("city")))]{
-			if rs_in_city {
-				rs_zone <- first(PDUZone overlapping self);	
-			}
+		create District from: marrakesh_districts with: [dist_code::int(get("ID")), dist_name::get("NAME")];
+		create PDUZone from: marrakesh_pdu with: [pduz_code::int(get("id")), pduz_name::get("label")];
+		create RoadSegment from: marrakesh_roads with: [rs_id::int(get("segm_id"))]{
+			rs_zone <- first(PDUZone overlapping self);
+			rs_in_city <- rs_zone != nil;
 		}
 		road_network <- as_edge_graph(list(RoadSegment));
-
+		
 		// create busses, bus stops, and connections
 		write "Creating busses and bus stops ...";
 		create BusStop from: marrakesh_bus_stops with: [bs_id::int(get("stop_numbe")), bs_name::get("stop_name"),bs_is_brt::int(get("BRT")) = 1]{
@@ -38,13 +41,6 @@ global {
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
 			bs_zone <- first(PDUZone overlapping self);
-			// affect the closest zone to nearby bus stops
-			if bs_zone = nil {
-				PDUZone pdz <- PDUZone closest_to self;
-				if self distance_to pdz <= BS_NEIGHBORING_DISTANCE {
-					bs_zone <- pdz;
-				}
-			}
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
@@ -127,19 +123,24 @@ global {
 											[BL_DIRECTION_RETURN,BL_DIRECTION_RETURN]];
 				
 				// list of intersecting bus stops between each pair of directions
-				list<list<BusStop>> list_inter_bss <- [BusLine[i].bl_outgoing_bs where
-									!empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs)];
-				list_inter_bss <+ BusLine[i].bl_outgoing_bs where !empty(each.bs_neighbors inter BusLine[j].bl_return_bs);
-				list_inter_bss <+ BusLine[i].bl_return_bs where !empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs);
-				list_inter_bss <+ BusLine[i].bl_return_bs where !empty(each.bs_neighbors inter BusLine[j].bl_return_bs);
+				list<list<BusStop>> list_inter_bss <- [BusLine[i].bl_outgoing_bs where (each.bs_zone != nil and
+									!empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs where (each.bs_zone != nil)))];
+				list_inter_bss <+ BusLine[i].bl_outgoing_bs where (each.bs_zone != nil and
+									!empty(each.bs_neighbors inter BusLine[j].bl_return_bs where (each.bs_zone != nil)));
+				list_inter_bss <+ BusLine[i].bl_return_bs where (each.bs_zone != nil and
+									!empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs where (each.bs_zone != nil)));
+				list_inter_bss <+ BusLine[i].bl_return_bs where (each.bs_zone != nil and
+									!empty(each.bs_neighbors inter BusLine[j].bl_return_bs where (each.bs_zone != nil)));
 
 				loop idx from: 0 to: 3 {
 					// if there are intersecting bus stops
 					if !empty(list_inter_bss[idx]) {
 						list<BusStop> current_bss1 <- list_dirs[idx][0] = BL_DIRECTION_OUTGOING ? 
-											BusLine[i].bl_outgoing_bs : BusLine[i].bl_return_bs;
+											BusLine[i].bl_outgoing_bs where (each.bs_zone != nil) :
+											BusLine[i].bl_return_bs where (each.bs_zone != nil);
 						list<BusStop> current_bss2 <- list_dirs[idx][1] = BL_DIRECTION_OUTGOING ? 
-											BusLine[j].bl_outgoing_bs : BusLine[j].bl_return_bs;
+											BusLine[j].bl_outgoing_bs where (each.bs_zone != nil) :
+											BusLine[j].bl_return_bs where (each.bs_zone != nil);
 						
 						// take the first intersection as a potential connection
 						list<BusStop> bs_to_connect <- [first(list_inter_bss[idx])];
@@ -160,8 +161,10 @@ global {
 								BusStop bs1 <- current_bss2 contains bs0 ? bs0 :current_bss2 closest_to bs0;
 								// closer connection ?
 								bs0 <- current_bss1 contains bs1 ? bs1 :current_bss1 closest_to bs1;
-								//bs1 <- current_bss2 contains bs0 ? bs0 :current_bss2 closest_to bs0;
-								do create_bc(bs0, list_dirs[idx][0], BusLine[j], bs1, list_dirs[idx][1],-1);
+								int cd <- int(bs0 distance_to bs1);
+								if cd <= BS_NEIGHBORING_DISTANCE {
+									do create_bc(bs0, list_dirs[idx][0], BusLine[j], bs1, list_dirs[idx][1],cd);	
+								}
 							}		
 						}
 					}
@@ -180,19 +183,19 @@ global {
 					bc_connection_distance <- dd;
 				}
 			}
-			BusStop bs_prev <- bc_bus_lines[0].previous_bs(bc_bus_directions[0],bc_bus_stops[0]);
-			if bs_prev != nil {
-				int dd <- bs_prev.dist_to_bs(bc_bus_stops[1]);
-				if dd < bc_connection_distance  {
-					bc_bus_stops[0] <- bs_prev;
-					bc_connection_distance <- dd;
-				}
-			}
 			bs_next <- bc_bus_lines[1].next_bs(bc_bus_directions[1],bc_bus_stops[1]);
 			if bs_next != nil {
 				int dd <- bs_next.dist_to_bs(bc_bus_stops[0]);
 				if dd < bc_connection_distance  {
 					bc_bus_stops[1] <- bs_next;
+					bc_connection_distance <- dd;
+				}
+			}
+			BusStop bs_prev <- bc_bus_lines[0].previous_bs(bc_bus_directions[0],bc_bus_stops[0]);
+			if bs_prev != nil {
+				int dd <- bs_prev.dist_to_bs(bc_bus_stops[1]);
+				if dd < bc_connection_distance  {
+					bc_bus_stops[0] <- bs_prev;
 					bc_connection_distance <- dd;
 				}
 			}

@@ -23,9 +23,6 @@ global {
 	// max allowed traffic level to simulate limiting congestion.
 	int G_TRAFF_LEVEL_MAX <- G_TRAFF_LEVEL_DARKRED;
 	
-	// use or not congestion from Google Traffic
-	bool traffic_on <- true;
-	
 	// the road network of the city and its suburbs
 	graph road_network;
 }

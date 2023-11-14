@@ -7,7 +7,7 @@
 */
 
 model BusVehicle
-
+import "../Params.gaml"
 import "TrafficSignal.gaml"
 import "Individual.gaml"
 import "BusTrip.gaml"
@@ -24,7 +24,7 @@ global {
 	float BV_TIME_DROP_IND <- 5#second;
 	
 	// How to decrease vehicle speed based on traffic level [evey value corresponds to a traff level, 0 is unused]
-	list<float> BV_SPEED_DIVIDER <- [0,1,1.5,2,2.5];
+	list<float> BV_SPEED_DIVIDER <- [0,1.0,2.0,3.0,4.0];
 }
 
 /*******************************/
@@ -71,11 +71,30 @@ species BusVehicle skills: [moving] {
 		
 		// the bus has reached its next bus stop
 		if location overlaps (10#meter around bv_next_bs.location) {
-
-		 	bv_stop_wait_time <- BV_MIN_WAIT_TIME_BS;
+			
+			bv_stop_wait_time <- BV_MIN_WAIT_TIME_BS;
 		 	bv_in_move <- false;
 			bv_current_bs <- bv_next_bs;
-			bv_current_bs.bs_current_stopping_buses <+ self;	
+			bv_current_bs.bs_current_stopping_buses <+ self;
+			
+			// first outgoing stop : filling timetable of outgoing
+			// second condition to prevent null when last out bs = first return bs
+			if bv_current_bs = first(bv_line.bl_outgoing_bs) and bv_current_direction = BL_DIRECTION_OUTGOING {
+				bv_time_table <- [bv_line.bl_outgoing_bs[0]::time];
+				loop i from: 1 to: length(bv_line.bl_outgoing_bs)-1 {
+					bv_time_table <+ bv_line.bl_outgoing_bs[i] :: bv_time_table at bv_line.bl_outgoing_bs[i-1] +
+								(bv_line.bl_outgoing_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
+				}	
+			}
+			// first return stop : filling timetable of return 
+			// second condition to prevent null when last out bs = first return bs
+			else if bv_current_bs = first(bv_line.bl_return_bs) and bv_current_direction = BL_DIRECTION_RETURN {
+				bv_time_table <- [bv_line.bl_return_bs[0]::time];
+				loop i from: 1 to: length(bv_line.bl_return_bs)-1 {
+					bv_time_table <+ bv_line.bl_return_bs[i] :: bv_time_table at bv_line.bl_return_bs[i-1] +
+								(bv_line.bl_return_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
+				}	
+			}	
 								
 			// the bus is in a bus stop inside the city
 			if bv_in_city {
@@ -135,11 +154,13 @@ species BusVehicle skills: [moving] {
 				int n_individs <- bv_max_capacity - length(bv_passengers);
 				if n_individs > 0 {
 					// list of possible waiting passengers to take
-					list<Individual> waiting_inds <- bv_current_bs.bs_neighbors accumulate each.bs_waiting_people; 
+					list<Individual> waiting_inds <- bv_current_bs.bs_neighbors accumulate each.bs_waiting_people
+									where !empty(each.ind_available_bt where (each.bt_bus_line = self.bv_line and
+										each.bt_bus_direction = self.bv_current_direction)); 
 
 					if !empty (waiting_inds) {
 						waiting_inds <- waiting_inds where( (each.ind_current_plan_index = 0 and
-										!empty(each.ind_available_bt where	(each.bt_bus_line = bv_line and
+										!empty(each.ind_available_bt where (each.bt_bus_line = bv_line and
 										each.bt_bus_direction = bv_current_direction and each.bt_type != BUS_TRIP_2ND_LINE))))
 									+
 									 waiting_inds where( (each.ind_current_plan_index = 1 and
@@ -151,7 +172,7 @@ species BusVehicle skills: [moving] {
 						
 						/** filter individuals based on active strategies */
 						
-						/* transfer */			
+						/***** transfer *****/			
 						// if transfer is off, remove individuals with 2L-trip that can still wait for a 1L-trip
 						if !transfer_on {
 							// first, retrieve individuals with no 1L trips on this bus (the bus can only transfer them)
@@ -163,52 +184,60 @@ species BusVehicle skills: [moving] {
 							if !empty(inds_to_remove) {
 								// individuals with 1L trip on other busses and who can still wait for 1L trip
 								inds_to_remove <- (inds_to_remove where (int(time - each.ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS and
-									!empty(each.ind_available_bt where (each.bt_bus_line != bv_line and each.bt_type= BUS_TRIP_SINGLE_LINE))));
+									!empty(each.ind_available_bt where (each.bt_bus_line != bv_line and each.bt_type = BUS_TRIP_SINGLE_LINE))));
 								// remove
 								waiting_inds <- waiting_inds - inds_to_remove;
 							}
 						}
 						
-						/* time tables */
+						/***** time tables *****/
 						// if passengers have information about time tables of bus lines, remove individuals that can do
 						// a better trip on another line 					
 						if time_tables_on {
 							list<Individual> inds_to_remove <- [];
 							
 							loop indiv over: waiting_inds {
-								
-								// time to arrive to destination using this bus
-								float time_to_dest_this <-#max_float;
-								list<BusTrip> btps <- indiv.ind_available_bt where (each.bt_type != BUS_TRIP_1ST_LINE and
-													each.bt_end_bs in bv_time_table.keys);
+								// can this bus takes indiv to his destination
+								// consider (for now to simplify) only trips that arrive to final destination = SINGLE and 2ND trips 
+								list<BusTrip> btps <- indiv.ind_available_bt where (each.bt_bus_line = self.bv_line and
+									each.bt_bus_direction = self.bv_current_direction and
+									((indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_SINGLE_LINE) or 
+										(indiv.ind_current_plan_index = 1 and each.bt_type = BUS_TRIP_2ND_LINE)));
+												
 								if !empty(btps) {
-									time_to_dest_this <- min(btps collect (bv_time_table at each.bt_end_bs));
-									
-									float min_time_to_dest_others <- #max_float;
-									loop bt over: indiv.ind_available_bt where (each.bt_type != BUS_TRIP_1ST_LINE) {
-										// other busses that can serve this trip
-										list<BusVehicle> bvs <- BusVehicle where (each.bv_line != self.bv_line and !empty(each.bv_time_table)
-											 and each.bv_line = bt.bt_bus_line and each.bv_current_direction = bt.bt_bus_direction);
-										if !empty(bvs) {
-											// only bus vehicles who did not reach this bus stop yet
-											if bt.bt_bus_direction = BL_DIRECTION_OUTGOING {
-												bvs <- bvs where (each.bv_line.bl_outgoing_bs index_of each.bv_current_bs < 
-													each.bv_line.bl_outgoing_bs index_of self.bv_current_bs);
-											} else {
-												bvs <- bvs where (each.bv_line.bl_return_bs index_of each.bv_current_bs < 
-													each.bv_line.bl_return_bs index_of self.bv_current_bs);
-											}
+									// time to arrive to destination using this bus
+									float time_to_dest_this <- min(btps collect (bv_time_table at each.bt_end_bs));
+									if time_to_dest_this > bv_time_table at self.bv_current_bs {
+										
+										float min_time_to_dest_others <- #max_float;
+										// trips using other lines
+										loop bt over: indiv.ind_available_bt where (each.bt_bus_line != self.bv_line and
+												(indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_SINGLE_LINE) or
+												(indiv.ind_current_plan_index = 1 and each.bt_type = BUS_TRIP_2ND_LINE)) {
+											// other busses that can serve this trip
+											list<BusVehicle> bvs <- BusVehicle where (each.bv_line = bt.bt_bus_line and
+												each.bv_current_direction = bt.bt_bus_direction and !empty(each.bv_time_table));
 											if !empty(bvs) {
-												float tt <- min(bvs where (bt.bt_end_bs in each.bv_time_table.keys) accumulate (each.bv_time_table at bt.bt_end_bs));
-												if tt < min_time_to_dest_others {
-													min_time_to_dest_others <- tt;
+												// only bus vehicles who did not reach this bus stop yet
+												if bt.bt_bus_direction = BL_DIRECTION_OUTGOING {
+													bvs <- bvs where (each.bv_line.bl_outgoing_bs index_of each.bv_current_bs < 
+														each.bv_line.bl_outgoing_bs index_of bt.bt_start_bs);
+												} else {
+													bvs <- bvs where (each.bv_line.bl_return_bs index_of each.bv_current_bs < 
+														each.bv_line.bl_return_bs index_of bt.bt_start_bs);
 												}
-											}	
+												if !empty(bvs) {
+													float tt <- min(bvs where (bt.bt_end_bs in each.bv_time_table.keys) accumulate (each.bv_time_table at bt.bt_end_bs));
+													if tt < min_time_to_dest_others {
+														min_time_to_dest_others <- tt;
+													}
+												}	
+											}
 										}
+										if min_time_to_dest_others < time_to_dest_this {
+											inds_to_remove <+ indiv;
+										}	
 									}
-									if min_time_to_dest_others < time_to_dest_this {
-										inds_to_remove <+ indiv;
-									}	
 								}
 							}
 							// remove
@@ -216,7 +245,6 @@ species BusVehicle skills: [moving] {
 						}
 
 						/*******/
-						
 						nn <- 0;				
 						ask n_individs among waiting_inds {
 							// available bus trips with this bus line and direction
@@ -225,23 +253,28 @@ species BusVehicle skills: [moving] {
 							
 							// the individual was waiting for a first ride
 							if ind_current_plan_index = 0 {
-								// prefer 1L trips
-								if !transfer_on and int(time - ind_waiting_times[0]) < IND_WAITING_TIME_FOR_1L_TRIPS {
-									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
-										with_min_of (each.bt_bus_distance);
+								// best option (minimum distance) for 1L trip
+								BusTrip best1L <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
+											with_min_of (each.bt_bus_distance);
+								
+								if best1L != nil {
+									ind_current_bt <- best1L;
 								} else {
-									
-								}
-								if ind_current_bt = nil {
-									// transfer is on or no 1L trips has been found or the individual has waited for more than 1 hour
-									ind_current_bt <- my_bus_trips where (each.bt_type != BUS_TRIP_2ND_LINE)
-										with_min_of (each.bt_bus_distance);
+									// list of bus stop where we can make correspondances
+									list<BusStop> correspondances <- ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE)
+														accumulate each.bt_start_bs;
+									// best option is where can make max correspondances for 2L trips
+									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_1ST_LINE)
+												with_max_of length(each.bt_end_bs.bs_neighbors inter correspondances);
 								}				
+																			
 							} else {
 								// the individual is making a second ride
 								ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_2ND_LINE)
-											with_min_of (each.bt_bus_distance);
+												with_min_of (each.bt_bus_distance);
+												//with_min_of (myself.bv_time_table at each.bt_end_bs);
 							}
+														
 							// a trip has been picked
 							if ind_current_bt !=nil {
 								nn <- nn + 1;
@@ -273,14 +306,6 @@ species BusVehicle skills: [moving] {
 					bv_current_direction <- BL_DIRECTION_RETURN;
 					bv_next_bs <- bv_line.bl_return_bs[0];
 				} else {
-					// first outgoing stop : filling timetable of outgoing
-					if bv_current_bs = first(bv_line.bl_outgoing_bs) {
-						bv_time_table <- [bv_line.bl_outgoing_bs[0]::time];
-						loop i from: 1 to: length(bv_line.bl_outgoing_bs)-1 {
-							bv_time_table <+ bv_line.bl_outgoing_bs[i] :: bv_time_table at bv_line.bl_outgoing_bs[i-1] +
-										(bv_line.bl_outgoing_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
-						}	
-					}
 					bv_next_bs <- bv_line.bl_outgoing_bs[(bv_line.bl_outgoing_bs index_of bv_next_bs) + 1];
 				}
 			} else { // return
@@ -288,14 +313,6 @@ species BusVehicle skills: [moving] {
 					bv_current_direction <- BL_DIRECTION_OUTGOING;
 					bv_next_bs <- bv_line.bl_outgoing_bs[0];
 				} else {
-					// first return stop : filling timetable of return
-					if bv_current_bs = first(bv_line.bl_return_bs) {
-						bv_time_table <- [bv_line.bl_return_bs[0]::time];
-						loop i from: 1 to: length(bv_line.bl_return_bs)-1 {
-							bv_time_table <+ bv_line.bl_return_bs[i] :: bv_time_table at bv_line.bl_return_bs[i-1] +
-										(bv_line.bl_return_dists[i-1] / bv_line.bl_com_speed) + BV_MIN_WAIT_TIME_BS;
-						}	
-					}
 					bv_next_bs <- bv_line.bl_return_bs[(bv_line.bl_return_bs index_of bv_next_bs) + 1];
 				}
 			}

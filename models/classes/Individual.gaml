@@ -14,11 +14,8 @@ import "PDUZone.gaml"
 global {
 	
 	// time to wait for 1L-trips before taking a 2L-trip when transfer is off
-	int IND_WAITING_TIME_FOR_1L_TRIPS <- int(1#hour);
-	
-	// individuals have information about bus timetables 
-	bool time_tables_on <- false; 
-	
+	int IND_WAITING_TIME_FOR_1L_TRIPS <- int(30#minute);
+		
 	// a list of arrivals for data saving
 	list<Individual> unsaved_arrivals <- [];
 }
@@ -54,7 +51,10 @@ species Individual parallel: true {
 					int direc <- bl.can_link_2bs(obs,dbs);
 					// don't build another 1L-trip with the same bus line and same bus stop
 					if direc != -1 and !similar_bt_exists(bl, direc, nil){
-						do build_trip (BUS_TRIP_SINGLE_LINE,bl, obs, dbs, direc);
+						int walk <- int(ind_origin_bs distance_to obs + dbs distance_to ind_destin_bs);
+						if walk <= BS_NEIGHBORING_DISTANCE {
+							do build_trip (BUS_TRIP_SINGLE_LINE, bl, obs, dbs, direc, walk);	
+						}
 					}
 				}
 			}	
@@ -78,26 +78,39 @@ species Individual parallel: true {
 							int direc2 <- bc.bc_bus_lines[1].can_link_2bs(bc.bc_bus_stops[1], dbs);
 							
 							if direc1 != -1 and direc2 != -1 {
+								
 								if !similar_bt_exists(bc.bc_bus_lines[0], direc1, bc.bc_bus_stops[0]) {
-									do build_trip (BUS_TRIP_1ST_LINE,bc.bc_bus_lines[0], obs, bc.bc_bus_stops[0], direc1);
+									int walk <- int(ind_origin_bs distance_to obs + bc.bc_connection_distance);
+									if walk <= BS_NEIGHBORING_DISTANCE {
+										do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[0], obs, bc.bc_bus_stops[0], direc1, walk);	
+									}
 								}
 								if !similar_bt_exists(bc.bc_bus_lines[1], direc2, dbs) {
-									do build_trip (BUS_TRIP_2ND_LINE,bc.bc_bus_lines[1], bc.bc_bus_stops[1], dbs, direc2);
+									int walk <- int(dbs distance_to ind_destin_bs);
+									if walk <= BS_NEIGHBORING_DISTANCE {
+										do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[1], bc.bc_bus_stops[1], dbs, direc2, walk);
+									}	
 								}	
 							}
 						}
 						
-						// if the first connected bus is at the destination
+						// if it is the second bus which is at the origin
 						else if bc.bc_bus_lines[1] in obs.bs_bus_lines {
 							int direc1 <- bc.bc_bus_lines[1].can_link_2bs(obs, bc.bc_bus_stops[1]);
 							int direc2 <- bc.bc_bus_lines[0].can_link_2bs(bc.bc_bus_stops[0], dbs);
 							
 							if direc1 != -1 and direc2 != -1 {
 								if !similar_bt_exists(bc.bc_bus_lines[1], direc1, bc.bc_bus_stops[1]) {
-									do build_trip (BUS_TRIP_1ST_LINE,bc.bc_bus_lines[1], obs, bc.bc_bus_stops[1], direc1);
+									int walk <- int(ind_origin_bs distance_to obs + bc.bc_connection_distance);
+									if walk <= BS_NEIGHBORING_DISTANCE {
+										do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[1], obs, bc.bc_bus_stops[1], direc1, walk);
+									}
 								}
 								if !similar_bt_exists(bc.bc_bus_lines[0], direc2, dbs) {
-									do build_trip (BUS_TRIP_2ND_LINE,bc.bc_bus_lines[0], bc.bc_bus_stops[0], dbs, direc2);
+									int walk <- int(dbs distance_to ind_destin_bs);
+									if walk <= BS_NEIGHBORING_DISTANCE {
+										do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[0], bc.bc_bus_stops[0], dbs, direc2, walk);
+									}
 								}	
 							}
 						}	
@@ -108,7 +121,7 @@ species Individual parallel: true {
 	}
 	
 	// create a bus trip
-	action build_trip (int bttype, BusLine bsl, BusStop o_bst, BusStop d_bst, int dir) {
+	action build_trip (int bttype, BusLine bsl, BusStop o_bst, BusStop d_bst, int dir, int walk_dis) {
 		int o_ix;	int	d_ix;
 		list<int> distances <- [];
 		
@@ -131,8 +144,7 @@ species Individual parallel: true {
 			bt_bus_distance <- sum(distances[o_ix::d_ix+1]); // compute the distance between origin and destination
 			// compute the walking distance between actual origin and the start of the trip 
 			// 			 					and between the end of the trip and the actual destination
-			bt_walk_distance <- myself.ind_origin_bs.dist_to_bs(o_bst) +
-							myself.ind_destin_bs.dist_to_bs(d_bst);
+			bt_walk_distance <- walk_dis;
 			myself.ind_available_bt <+ self;
 		}
 	}
