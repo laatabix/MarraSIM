@@ -16,7 +16,6 @@ global {
 	file marrakesh_districts <- shape_file("../includes/gis/marrakesh.shp"); // administrative districts
 	file marrakesh_bus_stops <- shape_file("../../includes/gis/bus_stops.shp");
 	file marrakesh_roads <- shape_file("../../includes/gis/road_segments.shp");
-	matrix bustopsMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
 	
 	geometry shape <- envelope (marrakesh_roads);
 	
@@ -43,7 +42,7 @@ global {
 			bs_zone <- first(PDUZone overlapping self);
 		}
 		
-		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
+		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines/bus_lines_stops.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
 			// create the bus line if it does not exist yet
@@ -104,7 +103,7 @@ global {
 		}
 		ask BusStop {
 			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
+			bs_neighbors <- (BusStop where (each.bs_zone != nil and each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
 		
@@ -131,7 +130,7 @@ global {
 									!empty(each.bs_neighbors inter BusLine[j].bl_outgoing_bs where (each.bs_zone != nil)));
 				list_inter_bss <+ BusLine[i].bl_return_bs where (each.bs_zone != nil and
 									!empty(each.bs_neighbors inter BusLine[j].bl_return_bs where (each.bs_zone != nil)));
-
+				
 				loop idx from: 0 to: 3 {
 					// if there are intersecting bus stops
 					if !empty(list_inter_bss[idx]) {
@@ -144,15 +143,16 @@ global {
 						
 						// take the first intersection as a potential connection
 						list<BusStop> bs_to_connect <- [first(list_inter_bss[idx])];
-						int last_con_id <- current_bss1 index_of bs_to_connect[0];
 							
 						loop bs0 over: (list_inter_bss[idx] - first(list_inter_bss[idx])) {
-							int tx <- current_bss1 index_of bs0;
-							// do not create a connection for consecutive bus stops
-							if tx != last_con_id + 1 {
-								bs_to_connect <+ bs0;
-							}
-							last_con_id <- tx;
+							if !((BusLine[i].previous_bs (list_dirs[idx][0],bs0) = nil or
+									BusLine[i].previous_bs(list_dirs[idx][0],bs0) in list_inter_bss[idx])
+								and
+							   (BusLine[i].next_bs (list_dirs[idx][0],bs0) = nil or
+							   	BusLine[i].next_bs (list_dirs[idx][0],bs0) in list_inter_bss[idx])
+							   ) {
+							   	bs_to_connect <+ bs0;
+							 }							
 						}
 						
 						loop bs0 over: bs_to_connect {
@@ -174,38 +174,23 @@ global {
 		
 		write "Optimizing bus connections... ";
 		ask BusConnection {
-			BusStop bs_next <- bc_bus_lines[0].next_bs(bc_bus_directions[0],bc_bus_stops[0]);
-			if bs_next != nil {
-				// if the connection is better at the next stop, change to the next stop
-				int dd <- bs_next.dist_to_bs(bc_bus_stops[1]);
-				if dd < bc_connection_distance  {
-					bc_bus_stops[0] <- bs_next;
-					bc_connection_distance <- dd;
-				}
-			}
-			bs_next <- bc_bus_lines[1].next_bs(bc_bus_directions[1],bc_bus_stops[1]);
-			if bs_next != nil {
-				int dd <- bs_next.dist_to_bs(bc_bus_stops[0]);
-				if dd < bc_connection_distance  {
-					bc_bus_stops[1] <- bs_next;
-					bc_connection_distance <- dd;
-				}
-			}
-			BusStop bs_prev <- bc_bus_lines[0].previous_bs(bc_bus_directions[0],bc_bus_stops[0]);
-			if bs_prev != nil {
-				int dd <- bs_prev.dist_to_bs(bc_bus_stops[1]);
-				if dd < bc_connection_distance  {
-					bc_bus_stops[0] <- bs_prev;
-					bc_connection_distance <- dd;
-				}
-			}
-			bs_prev <- bc_bus_lines[1].previous_bs(bc_bus_directions[1],bc_bus_stops[1]);
-			if bs_prev != nil {
-				int dd <- bs_prev.dist_to_bs(bc_bus_stops[0]);
-				if dd < bc_connection_distance  {
-					bc_bus_stops[1] <- bs_prev;
-					bc_connection_distance <- dd;
-				}
+			list<BusStop> alternatives1 <- list<BusStop>([bc_bus_lines[0].next_bs(bc_bus_directions[0],bc_bus_stops[0]),
+									bc_bus_lines[0], bc_bus_lines[0].previous_bs(bc_bus_directions[0],bc_bus_stops[0])]);
+			list<BusStop> alternatives2 <- list<BusStop>([bc_bus_lines[1].next_bs(bc_bus_directions[1],bc_bus_stops[1]),
+									bc_bus_lines[1], bc_bus_lines[1].previous_bs(bc_bus_directions[1],bc_bus_stops[1])]);
+			loop i from: 0 to: 2 {
+				if alternatives1[i] != nil and alternatives1[i].bs_zone != nil {
+					loop j from: 0 to: 2 {
+						if alternatives2[j] != nil and alternatives2[j].bs_zone!= nil {
+							int dd <- int(alternatives1[i] distance_to alternatives2[j]);
+							if dd < bc_connection_distance  {
+								bc_bus_stops[0] <- alternatives1[i];
+								bc_bus_stops[1] <- alternatives2[j];
+								bc_connection_distance <- dd;
+							}	
+						}
+					}	
+				}	
 			}
 		}
 		write "Number of created bus connections: " + length(BusConnection);
@@ -218,9 +203,9 @@ global {
 				+ ',' + bc_bus_directions[0] + ',' + bc_bus_directions[1] + ',' + bc_connection_distance + '\n';	
 		}
 		
-		bool dl <- delete_file("../../includes/csv/bus_connections.csv");
-		save conn_ss format: 'text' rewrite: true to: "../../includes/csv/bus_connections.text";
-		bool rn <- rename_file("../../includes/csv/bus_connections.text","../../includes/csv/bus_connections.csv");
+		bool dl <- delete_file("../../includes/csv/bus_lines/bus_connections.csv");
+		save conn_ss format: 'text' rewrite: true to: "../../includes/csv/bus_lines/bus_connections.text";
+		bool rn <- rename_file("../../includes/csv/bus_lines/bus_connections.text","../../includes/csv/bus_lines/bus_connections.csv");
 		
 		write "DONE." color: #green;	
 	}

@@ -42,7 +42,7 @@ global {
 			bs_zone <- first(PDUZone overlapping self);
 		}
 		
-		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines_stops.csv",true));
+		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines/bus_lines_stops.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
 			// create the bus line if it does not exist yet
@@ -103,12 +103,12 @@ global {
 		}
 		ask BusStop {
 			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
+			bs_neighbors <- (BusStop where (each.bs_zone != nil and each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
 		
 		// create bus connection for each line
 		write "Creating bus connections ...";
-		dataMatrix <- matrix(csv_file("../../includes/csv/bus_connections.csv",true));
+		dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines/bus_connections.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			BusLine bl <- BusLine first_with (each.bl_name = dataMatrix[0,i]);
 			if bl != nil {
@@ -142,11 +142,11 @@ global {
 					ind_destin_zone <- d_zone;
 					ind_origin_bs <- one_of(obstops);
 					if ind_origin_bs = nil { // in case of no bus stops in the zone
-						ind_origin_bs <- BusStop closest_to ind_origin_zone.location;
+						ind_origin_bs <- BusStop where (each.bs_zone != nil) closest_to ind_origin_zone.location;
 					}
 					ind_destin_bs <- one_of(dbstops);
 					if ind_destin_bs = nil {
-						ind_destin_bs <- BusStop closest_to ind_destin_zone.location;
+						ind_destin_bs <- BusStop  where (each.bs_zone != nil) closest_to ind_destin_zone.location;
 					}
 				}
 			}	
@@ -165,10 +165,28 @@ global {
 			}
 			write ind_id; // watch processing ...
 		}
+		// clean
+		ask Individual where empty(each.ind_available_bt where (each.bt_type=2)) inter
+							Individual where !empty(each.ind_available_bt where (each.bt_type=3)) {
+			ask ind_available_bt where (each.bt_type=3) {
+				remove self from: myself.ind_available_bt;
+				do die;
+			}
+		}
+		ask Individual where empty(each.ind_available_bt where (each.bt_type=3)) inter
+							Individual where !empty(each.ind_available_bt where (each.bt_type=2)) {
+			ask ind_available_bt where (each.bt_type=2) {
+				remove self from: myself.ind_available_bt;
+				do die;
+			}
+		}
+		
 		write "1 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));	
 		
 		write "Recomputing planning for individuals without plans..";
+		int counter <- 0;
 		ask Individual where (empty(each.ind_available_bt)) {
+			write counter;
 			Individual indiv <- one_of(Individual where (!empty(each.ind_available_bt) and
 							each.ind_origin_zone = self.ind_origin_zone and each.ind_destin_zone = self.ind_destin_zone));
 			if indiv = nil {
@@ -183,6 +201,7 @@ global {
 			} else {
 				do die;
 			}
+			counter <- counter + 1;
 		}
 		write "2 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));
 		

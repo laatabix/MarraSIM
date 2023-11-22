@@ -15,6 +15,8 @@ import "BusTrip.gaml"
 global {
 	
 	// speed of busses in the suburban area
+	float BV_URBAN_SPEED <- 25#km/#hour;
+	// speed of busses in the suburban area
 	float BV_SUBURBAN_SPEED <- 50#km/#hour;
 	// the minimum wait time at bus stops
 	float BV_MIN_WAIT_TIME_BS <- 30#second;
@@ -249,49 +251,60 @@ species BusVehicle skills: [moving] {
 						ask n_individs among waiting_inds {
 							// available bus trips with this bus line and direction
 							list<BusTrip> my_bus_trips <- ind_available_bt where (each.bt_bus_line = myself.bv_line
-										and each.bt_bus_direction = myself.bv_current_direction);
-							
-							// the individual was waiting for a first ride
-							if ind_current_plan_index = 0 {
-								// best option (minimum distance) for 1L trip
-								BusTrip best1L <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
-											with_min_of (each.bt_bus_distance);
-								
-								if best1L != nil {
-									ind_current_bt <- best1L;
+										and each.bt_bus_direction = myself.bv_current_direction//); 
+										and each.bt_start_bs in myself.bv_current_bs.bs_neighbors);
+							if !empty(my_bus_trips) {
+								// the individual was waiting for a first ride
+								if ind_current_plan_index = 0 {
+									// best option (minimum distance) for 1L trip
+									BusTrip best1L <- my_bus_trips where (each.bt_type = BUS_TRIP_SINGLE_LINE)
+												with_min_of (each.bt_bus_distance + each.bt_walk_distance);
+
+									if best1L != nil {
+										ind_current_bt <- best1L;
+									} else {
+										// choose 1st trip as the one with destination is where 2nd trips have the minimum trip time
+										float min_val <- #max_float;
+										float mean_trip_time_2nd;
+										list<BusTrip> my_1strips <- my_bus_trips where (each.bt_type = BUS_TRIP_1ST_LINE);
+										list<BusTrip> my_2ndtrips <- ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE);
+										loop trip1 over: my_1strips {
+											mean_trip_time_2nd <- my_2ndtrips where (
+													trip1.bt_end_bs in each.bt_start_bs.bs_neighbors)
+													mean_of (each.bt_bus_distance + each.bt_walk_distance);
+											if mean_trip_time_2nd < min_val {
+												min_val <- mean_trip_time_2nd;
+												ind_current_bt <- trip1;
+											}
+											
+										}
+									}				
+																				
 								} else {
-									// list of bus stop where we can make correspondances
-									list<BusStop> correspondances <- ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE)
-														accumulate each.bt_start_bs;
-									// best option is where can make max correspondances for 2L trips
-									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_1ST_LINE)
-												with_max_of length(each.bt_end_bs.bs_neighbors inter correspondances);
-								}				
-																			
-							} else {
-								// the individual is making a second ride
-								ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_2ND_LINE)
-												with_min_of (each.bt_bus_distance);
-												//with_min_of (myself.bv_time_table at each.bt_end_bs);
-							}
-														
-							// a trip has been picked
-							if ind_current_bt !=nil {
-								nn <- nn + 1;
-								myself.bv_passengers <+ self;
-								ind_waiting_bs.bs_waiting_people >- self;
-								ind_waiting_bs <- nil;
-								ind_waiting_times[ind_current_plan_index] <- int(time - ind_waiting_times[ind_current_plan_index]);
-								ind_trip_times[ind_current_plan_index] <- int(time);	
-								myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_IND;
-								myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_IND;
-								if myself.bv_current_bs.bs_zone != nil {
-									myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay <- 
-											myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_IND;
+									// the individual is making a second ride
+									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_2ND_LINE)
+													with_min_of (each.bt_bus_distance + each.bt_walk_distance);
+													//with_min_of (myself.bv_time_table at each.bt_end_bs);
 								}
-							} else {
-								write "ERROR in finding bus trip !" color: #red;
-							}	
+															
+								// a trip has been picked
+								if ind_current_bt !=nil {
+									nn <- nn + 1;
+									myself.bv_passengers <+ self;
+									ind_waiting_bs.bs_waiting_people >- self;
+									ind_waiting_bs <- nil;
+									ind_waiting_times[ind_current_plan_index] <- int(time - ind_waiting_times[ind_current_plan_index]);
+									ind_trip_times[ind_current_plan_index] <- int(time);	
+									myself.bv_stop_wait_time <- myself.bv_stop_wait_time + BV_TIME_TAKE_IND;
+									myself.bv_accumulated_passaging_delay <- myself.bv_accumulated_passaging_delay + BV_TIME_TAKE_IND;
+									if myself.bv_current_bs.bs_zone != nil {
+										myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay <- 
+												myself.bv_current_bs.bs_zone.pduz_accumulated_passaging_delay + BV_TIME_TAKE_IND;
+									}
+								} else {
+									write "ERROR in finding bus trip !" color: #red;
+								}	
+							}
 						}
 						if nn > 0 {
 							write world.formatted_time() + bv_line.bl_name  + ' (' + bv_current_direction + ') is taking ' + nn + ' people at ' + bv_current_bs.bs_name color: #darkgreen;

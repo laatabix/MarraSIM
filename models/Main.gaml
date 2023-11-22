@@ -108,7 +108,7 @@ global {
 			bs_zone <- first(PDUZone overlapping self);
 		}
 		
-		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_stops.csv",true));
+		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines/bus_lines_stops.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
 			// create the bus line if it does not exist yet
@@ -171,34 +171,16 @@ global {
 		}
 		ask BusStop {
 			// self + neighbors represents the waiting BSs where an individual can take or leave a bus during a trip
-			bs_neighbors <- (BusStop where (each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
+			bs_neighbors <- (BusStop where (each.bs_zone != nil and each distance_to self <= BS_NEIGHBORING_DISTANCE)) sort_by (each distance_to self); 
 		}
-		
-		// create bus connection for each line
-		write "Creating bus connections ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/bus_connections.csv",true));
-		loop i from: 0 to: dataMatrix.rows -1 {
-			BusLine bl <- BusLine first_with (each.bl_name = dataMatrix[0,i]);
-			if bl != nil {
-				ask bl {
-					do create_bc (BusStop first_with (each.bs_id = int(dataMatrix[2,i])),
-						int(dataMatrix[4,i]),
-						BusLine first_with (each.bl_name = dataMatrix[1,i]),
-						BusStop first_with (each.bs_id = int(dataMatrix[3,i])),
-						int(dataMatrix[5,i]), int(dataMatrix[6,i]));
-				}
-			} else {
-				write "Error: nil BusLine while reading bus_connections file!" color: #red;
-			}
-		}
-		
+				
 		/*****/
 		
 		// creating n_vehicles for each bus line
 		write "Creating bus vehicles ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/bus_lines_data.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/bus_lines/bus_lines_data.csv",true));
 		ask BusLine {
-			int n_vehicles <- 2;
+			int n_vehicles <- BL_DEFAULT_NUMBER_OF_VEHICLES;
 			if dataMatrix index_of bl_name != nil {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
 				bl_interval_time_m <- float(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
@@ -266,7 +248,7 @@ global {
 				indiv_x.ind_available_bt <+ self;	
 			}
 		}
-		
+		//*/
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
 	}

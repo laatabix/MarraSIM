@@ -11,6 +11,10 @@ model BusLine
 import "BusConnection.gaml"
 
 global {
+	// the default number of vehicles in each line
+	int BL_DEFAULT_NUMBER_OF_VEHICLES <- 4;
+	//the default interva time between vehicles
+	float BL_DEFAULT_INTERVAL_TIME <- 20#minute;
 	
 	int BL_DIRECTION_OUTGOING <- 1;
 	int BL_DIRECTION_RETURN <- 2;
@@ -28,14 +32,13 @@ global {
 species BusLine schedules: [] parallel: true {
 	string bl_name;
 	bool bl_is_brt <- false;
-	float bl_interval_time_m <- 15#minute; // theoretical interval time between buses of the line
-	float bl_com_speed <- 20 #km/#h; // average speed while considering the traffic constraints
+	float bl_interval_time_m <- BL_DEFAULT_INTERVAL_TIME; // theoretical interval time between buses of the line
+	float bl_com_speed <- BV_URBAN_SPEED; // average speed while considering the traffic constraints
 	list<BusStop> bl_outgoing_bs <- []; // list of bus stops on an outgoing path
 	list<BusStop> bl_return_bs <- []; // bus stops on the return path
 	list<int> bl_outgoing_dists <- []; // computed distances between two successive bus stops on the outoging path
 	list<int> bl_return_dists <- []; // distances on the return path
-	list<BusConnection> bl_outgoing_connections <- [];
-	list<BusConnection> bl_return_connections <- [];
+	list<BusConnection> bl_connections <- [];
 	rgb bl_color <- one_of(BL_COLORS);
 	geometry bl_shape;
 	
@@ -46,16 +49,8 @@ species BusLine schedules: [] parallel: true {
 			bc_bus_stops <-[bs1,bs2];
 			bc_bus_directions <- [dir1,dir2];
 			bc_connection_distance <- cd;
-			if dir1 = BL_DIRECTION_OUTGOING {
-				myself.bl_outgoing_connections <+ self;
-			} else {
-				myself.bl_return_connections <+ self;
-			}
-			if dir2 = BL_DIRECTION_OUTGOING {
-				bl2.bl_outgoing_connections <+ self;
-			} else {
-				bl2.bl_return_connections <+ self;
-			}
+			myself.bl_connections <+ self;
+			bl2.bl_connections <+ self;
 		}
 	}
 	
@@ -74,6 +69,18 @@ species BusLine schedules: [] parallel: true {
 			}
 		}
 		return -1;
+	}
+	
+	int dist_between_bs (BusStop obs, BusStop dbs, int direc) {
+		if direc = BL_DIRECTION_OUTGOING {
+			int o_ix <- bl_outgoing_bs index_of obs;
+			int d_ix <- bl_outgoing_bs index_of dbs;
+			return sum(bl_outgoing_dists[o_ix::d_ix]);
+		} else {
+			int o_ix <- bl_return_bs index_of obs;
+			int d_ix <- bl_return_bs index_of dbs;
+			return sum(bl_return_dists[o_ix::d_ix]);
+		}
 	}
 	
 	// return the previous bus stop given the direction and another bus stop

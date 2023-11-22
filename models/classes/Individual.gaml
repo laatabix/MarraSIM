@@ -43,17 +43,17 @@ species Individual parallel: true {
 	
 	// compute plans for all bus stops of BS_NEIGHBORING_DISTANCE (all neighbors) around origin and destination bus stops
 	action make_plans {
-		
 		// 1-line trips
 		loop obs over: ind_origin_bs.bs_neighbors {
 			loop dbs over: ind_destin_bs.bs_neighbors {
 				loop bl over: obs.bs_bus_lines inter dbs.bs_bus_lines {
 					int direc <- bl.can_link_2bs(obs,dbs);
 					// don't build another 1L-trip with the same bus line and same bus stop
-					if direc != -1 and !similar_bt_exists(bl, direc, nil){
-						int walk <- int(ind_origin_bs distance_to obs + dbs distance_to ind_destin_bs);
-						if walk <= BS_NEIGHBORING_DISTANCE {
-							do build_trip (BUS_TRIP_SINGLE_LINE, bl, obs, dbs, direc, walk);	
+					if direc != -1 and !similar_bt_exists(bl, direc, nil, nil){
+						int walk1 <- int(ind_origin_bs distance_to obs);
+						int walk2 <- int(dbs distance_to ind_destin_bs);
+						if walk1 <= BS_NEIGHBORING_DISTANCE and walk2 <= BS_NEIGHBORING_DISTANCE{
+							do build_trip (BUS_TRIP_SINGLE_LINE, bl, obs, dbs, direc, walk1+walk2);	
 						}
 					}
 				}
@@ -61,63 +61,54 @@ species Individual parallel: true {
 		}
 		
 		// busses with 1L trip
-		list<BusLine> one_l_bus <- ind_available_bt collect each.bt_bus_line;
+		list<BusLine> one_l_bus <- remove_duplicates(ind_available_bt collect each.bt_bus_line);
 		
-		// 2-line trips	
-		loop obs over: ind_origin_bs.bs_neighbors {
-			loop dbs over: ind_destin_bs.bs_neighbors {
-				loop bc over: (obs.bs_bus_lines accumulate (each.bl_outgoing_connections  + each.bl_return_connections)) inter
-							(dbs.bs_bus_lines accumulate (each.bl_outgoing_connections + each.bl_return_connections)) {
-					
-					// do not construct 2L trips with a bus than can do 1L trip
-					if empty(one_l_bus inter bc.bc_bus_lines){
-						
-						// if the first connected bus (first bus in the BusConnection) is at the origin (of the individual)
-						if bc.bc_bus_lines[0] in obs.bs_bus_lines {
-							int direc1 <- bc.bc_bus_lines[0].can_link_2bs(obs, bc.bc_bus_stops[0]);
-							int direc2 <- bc.bc_bus_lines[1].can_link_2bs(bc.bc_bus_stops[1], dbs);
-							
-							if direc1 != -1 and direc2 != -1 {
-								
-								if !similar_bt_exists(bc.bc_bus_lines[0], direc1, bc.bc_bus_stops[0]) {
-									int walk <- int(ind_origin_bs distance_to obs + bc.bc_connection_distance);
-									if walk <= BS_NEIGHBORING_DISTANCE {
-										do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[0], obs, bc.bc_bus_stops[0], direc1, walk);	
-									}
-								}
-								if !similar_bt_exists(bc.bc_bus_lines[1], direc2, dbs) {
-									int walk <- int(dbs distance_to ind_destin_bs);
-									if walk <= BS_NEIGHBORING_DISTANCE {
-										do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[1], bc.bc_bus_stops[1], dbs, direc2, walk);
-									}	
-								}	
-							}
-						}
-						
-						// if it is the second bus which is at the origin
-						else if bc.bc_bus_lines[1] in obs.bs_bus_lines {
-							int direc1 <- bc.bc_bus_lines[1].can_link_2bs(obs, bc.bc_bus_stops[1]);
-							int direc2 <- bc.bc_bus_lines[0].can_link_2bs(bc.bc_bus_stops[0], dbs);
-							
-							if direc1 != -1 and direc2 != -1 {
-								if !similar_bt_exists(bc.bc_bus_lines[1], direc1, bc.bc_bus_stops[1]) {
-									int walk <- int(ind_origin_bs distance_to obs + bc.bc_connection_distance);
-									if walk <= BS_NEIGHBORING_DISTANCE {
-										do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[1], obs, bc.bc_bus_stops[1], direc1, walk);
-									}
-								}
-								if !similar_bt_exists(bc.bc_bus_lines[0], direc2, dbs) {
-									int walk <- int(dbs distance_to ind_destin_bs);
-									if walk <= BS_NEIGHBORING_DISTANCE {
-										do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[0], bc.bc_bus_stops[0], dbs, direc2, walk);
-									}
-								}	
-							}
-						}	
+		loop bl1 over: remove_duplicates(ind_origin_bs.bs_neighbors accumulate each.bs_bus_lines) - one_l_bus {
+			loop bl2 over: remove_duplicates(ind_destin_bs.bs_neighbors accumulate each.bs_bus_lines) - ([bl1] + one_l_bus) {				
+				
+				BusStop obs <- nil; BusStop dbs <- nil;
+				int index_of_bl1; int index_of_bl2;
+				
+				loop bc over: bl1.bl_connections where (each.bc_bus_lines contains bl2){
+					index_of_bl1 <- bc.bc_bus_lines index_of bl1;
+					if bc.bc_bus_directions [index_of_bl1] = BL_DIRECTION_OUTGOING {
+						obs <- closer(bl1.bl_outgoing_bs, ind_origin_bs);
+					} else {
+						obs <- closer(bl1.bl_return_bs, ind_origin_bs);
 					}
-				}	
+					int direc1 <- bl1.can_link_2bs(obs, bc.bc_bus_stops[index_of_bl1]);
+					
+					index_of_bl2 <- bc.bc_bus_lines index_of bl2;
+					if bc.bc_bus_directions [index_of_bl2] = BL_DIRECTION_OUTGOING {
+						dbs <- closer(bl2.bl_outgoing_bs, ind_destin_bs);
+					} else {
+						dbs <- closer(bl2.bl_return_bs, ind_destin_bs);
+					}
+					int direc2 <- bl2.can_link_2bs(bc.bc_bus_stops[index_of_bl2], dbs);
+					
+					if direc1 != -1 and direc2 != -1 {
+						int walk1 <- int(ind_origin_bs distance_to obs);
+						int walk2 <- int(ind_destin_bs distance_to dbs);
+						if walk1 <= BS_NEIGHBORING_DISTANCE and walk2 <= BS_NEIGHBORING_DISTANCE{
+							if !similar_bt_exists(bc.bc_bus_lines[index_of_bl1], bc.bc_bus_directions[index_of_bl1], obs,
+													bc.bc_bus_stops[index_of_bl1]) {
+								do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[index_of_bl1], obs,
+												bc.bc_bus_stops[index_of_bl1], bc.bc_bus_directions[index_of_bl1], walk1);		
+							}
+							if !similar_bt_exists(bc.bc_bus_lines[index_of_bl2], bc.bc_bus_directions[index_of_bl2],
+													bc.bc_bus_stops[index_of_bl2], dbs) {			
+								do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[index_of_bl2], bc.bc_bus_stops[index_of_bl2],
+												dbs, bc.bc_bus_directions[index_of_bl2], walk2);			
+							}		
+						}
+					}
+				}
 			}	
-		}			
+		}	
+	}
+	
+	BusStop closer (list<BusStop> lisa, BusStop bs){
+		return lisa contains bs ? bs : lisa closest_to bs;
 	}
 	
 	// create a bus trip
@@ -150,8 +141,9 @@ species Individual parallel: true {
 	}
 	
 	// test if a similar trip already exists
-	bool similar_bt_exists (BusLine bl, int dir, BusStop bs) {
-		return !empty(ind_available_bt where (each.bt_bus_line = bl and each.bt_bus_direction = dir and (bs = nil or each.bt_end_bs = bs)));
+	bool similar_bt_exists (BusLine bl, int dir, BusStop obs, BusStop dbs) {
+		return !empty(ind_available_bt where (each.bt_bus_line = bl and each.bt_bus_direction = dir
+			and (obs = nil or each.bt_start_bs = obs) and (dbs = nil or each.bt_end_bs = dbs)));
 	}
 }
 
