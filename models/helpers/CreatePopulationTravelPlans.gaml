@@ -45,33 +45,36 @@ global {
 		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines/bus_lines_stops.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
-			// create the bus line if it does not exist yet
-			BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
 			
-			if current_bl = nil {
-				create BusLine returns: my_busline { bl_name <- bus_line_name; }
-				current_bl <- my_busline[0];
-			}
-			BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
-			if current_bs != nil {
-				if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
-					if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
-						write "Error in order of bus stops!" color: #red;
+			if !(bus_line_name in ["L19","BRT1"]) {
+				// create the bus line if it does not exist yet
+				BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
+				
+				if current_bl = nil {
+					create BusLine returns: my_busline { bl_name <- bus_line_name; }
+					current_bl <- my_busline[0];
+				}
+				BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
+				if current_bs != nil {
+					if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
+						if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
+							write "Error in order of bus stops!" color: #red;
+						}
+						current_bl.bl_outgoing_bs <+ current_bs;
+					} else {
+						if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
+							write "Error in order of bus stops!" color: #red;
+						}
+						current_bl.bl_return_bs <+ current_bs;
 					}
-					current_bl.bl_outgoing_bs <+ current_bs;
+					// add the BL once only if the stop is in outgoing and return
+					if !(current_bs.bs_bus_lines contains current_bl) {
+						current_bs.bs_bus_lines <+ current_bl;
+					}
 				} else {
-					if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
-						write "Error in order of bus stops!" color: #red;
-					}
-					current_bl.bl_return_bs <+ current_bs;
-				}
-				// add the BL once only if the stop is in outgoing and return
-				if !(current_bs.bs_bus_lines contains current_bl) {
-					current_bs.bs_bus_lines <+ current_bl;
-				}
-			} else {
-				write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
-				return;
+					write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
+					return;
+				}	
 			}
 		}
 		
@@ -129,7 +132,7 @@ global {
 		
 		
 		write "Creating population ...";
-		matrix<int> ODMatrix <- matrix<int>(csv_file("../../includes/csv/ODMatrix.csv",false));
+		matrix<int> ODMatrix <- matrix<int>(csv_file("../../includes/csv/population/ODMatrix.csv",false));
 		loop i from: 0 to: ODMatrix.rows -1 {
 			PDUZone o_zone <- PDUZone first_with (each.pduz_code = i+1);
 			list<BusStop> obstops <- BusStop where (each.bs_zone = o_zone);
@@ -143,10 +146,15 @@ global {
 					ind_origin_bs <- one_of(obstops);
 					if ind_origin_bs = nil { // in case of no bus stops in the zone
 						ind_origin_bs <- BusStop where (each.bs_zone != nil) closest_to ind_origin_zone.location;
+						ind_origin_zone <- ind_origin_bs.bs_zone;
 					}
-					ind_destin_bs <- one_of(dbstops);
+					// distance between origin and destination must be 2*greater than the neighboring distance, or take a walk !
+					ind_destin_bs <- one_of(dbstops where (each distance_to ind_origin_bs > 2*BS_NEIGHBORING_DISTANCE));
 					if ind_destin_bs = nil {
-						ind_destin_bs <- BusStop  where (each.bs_zone != nil) closest_to ind_destin_zone.location;
+						ind_destin_bs <- BusStop where (each.bs_zone != nil and
+								(each distance_to ind_origin_bs > 2*BS_NEIGHBORING_DISTANCE))
+													closest_to ind_destin_zone.location;
+						ind_destin_zone <- ind_destin_bs.bs_zone;
 					}
 				}
 			}	
@@ -166,18 +174,16 @@ global {
 			write ind_id; // watch processing ...
 		}
 		// clean
-		ask Individual where empty(each.ind_available_bt where (each.bt_type=2)) inter
-							Individual where !empty(each.ind_available_bt where (each.bt_type=3)) {
+		ask (Individual where empty(each.ind_available_bt where (each.bt_type=2)) inter
+							Individual where !empty(each.ind_available_bt where (each.bt_type=3))) {
 			ask ind_available_bt where (each.bt_type=3) {
 				remove self from: myself.ind_available_bt;
-				do die;
 			}
 		}
-		ask Individual where empty(each.ind_available_bt where (each.bt_type=3)) inter
-							Individual where !empty(each.ind_available_bt where (each.bt_type=2)) {
+		ask (Individual where empty(each.ind_available_bt where (each.bt_type=3)) inter
+							Individual where !empty(each.ind_available_bt where (each.bt_type=2))) {
 			ask ind_available_bt where (each.bt_type=2) {
 				remove self from: myself.ind_available_bt;
-				do die;
 			}
 		}
 		
@@ -198,16 +204,14 @@ global {
 				self.ind_destin_zone <- indiv.ind_destin_zone;
 				self.ind_destin_bs <- indiv.ind_destin_bs;
 				self.ind_available_bt <- copy(indiv.ind_available_bt);	
-			} else {
-				do die;
 			}
 			counter <- counter + 1;
 		}
 		write "2 - Population with a plan : " + length(Individual where !empty(each.ind_available_bt));
 		
 		write "Preparing data ...";
-		bool dl <- delete_file("../../includes/csv/populations.csv");
-		dl <- delete_file("../../includes/csv/travel_plans.csv");
+		bool dl <- delete_file("../../includes/csv/population/populations.csv");
+		dl <- delete_file("../../includes/csv/population/travel_plans.csv");
 		string ind_ss <- "ind,ozone,dzone,obs,dbs" + "\n";
 		string plan_ss <- "ind,type,startbs,bl,endbs,dir,dist,walk" + "\n";
 		
@@ -224,16 +228,16 @@ global {
 			}
 			// saving each 1000 individuals apart to avoid memory problems in case of large datasets
 			if i mod 1000 = 0 or i = N-1 {
-				save ind_ss format: 'text' rewrite: false to: "../../includes/csv/populations.text";
-				save plan_ss format: 'text' rewrite: false to: "../../includes/csv/travel_plans.text";
+				save ind_ss format: 'text' rewrite: false to: "../../includes/csv/population/populations.text";
+				save plan_ss format: 'text' rewrite: false to: "../../includes/csv/population/travel_plans.text";
 				ind_ss <- "";
 				plan_ss <- "";
 				write "Saving populations and travel plans to text files ...";
 			}
 		}
 		
-		bool rn <- rename_file("../../includes/csv/populations.text","../../includes/csv/populations.csv");
-		rn <- rename_file("../../includes/csv/travel_plans.text","../../includes/csv/travel_plans.csv");	
+		bool rn <- rename_file("../../includes/csv/population/populations.text","../../includes/csv/population/populations.csv");
+		rn <- rename_file("../../includes/csv/population/travel_plans.text","../../includes/csv/population/travel_plans.csv");	
 		
 		write "DONE." color: #green;
 	}

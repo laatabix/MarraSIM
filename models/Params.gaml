@@ -9,9 +9,10 @@ model Params
 
 global {
 	
+	float sim_id; // a unique simulation id for data storage
 	/********* Simulation *********/
 	// whether to save simulation data (to /outputs) or not
-	bool save_data_on <- false;
+	bool save_data_on <- true;
 	// display or not buslines (instead of roads with traffic levels)
 	bool show_buslines <- false;
 	// display or not BRT lines
@@ -21,7 +22,7 @@ global {
 
 	/********* Road Traffic *********/
 	// use or not congestion from Google Traffic
-	bool traffic_on <- false;
+	bool traffic_on <- true;
 	/******************************/
 	
 	
@@ -30,7 +31,7 @@ global {
 	bool transfer_on <- false; 
 	
 	// individuals have information about bus timetables
-	bool time_tables_on <- false; 
+	bool time_tables_on <- true; 
 
 	// whether BRT lines are activated or not
 	bool use_brt_lines <- false;

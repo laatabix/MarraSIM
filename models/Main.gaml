@@ -10,7 +10,6 @@
 */
 
 model MarraSIM
-import "Params.gaml"
 import "classes/PDUZone.gaml"
 import "classes/Building.gaml"
 
@@ -34,7 +33,6 @@ global {
 	
 	// simulation parameters
 	float step <- 10#second;// defining one simulation step as X seconds
-	float sim_id; // a unique simulation id for data storage
 	font AFONT0 <- font("Calibri", 16, #bold);
 	
 	// stats and displayed graphs
@@ -76,7 +74,9 @@ global {
 			save "cycle,bl,outs,rets,outs_board,rets_board,traff,sign,psg"
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/buslines.csv";
 			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk,wtt,tpt"
-					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/bustrips.csv";	
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/bustrips.csv";
+			save "cycle,bv,bl,bs,zone"
+					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/full_bus_vehicles.csv";
 		}
 		
 		// create the environment: city, districts, roads, traffic signals
@@ -111,33 +111,36 @@ global {
 		matrix dataMatrix <- matrix(csv_file("../includes/csv/bus_lines/bus_lines_stops.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
-			// create the bus line if it does not exist yet
-			BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
 			
-			if current_bl = nil {
-				create BusLine returns: my_busline { bl_name <- bus_line_name; }
-				current_bl <- my_busline[0];
-			}
-			BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
-			if current_bs != nil {
-				if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
-					if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
-						write "Error in order of bus stops!" color: #red;
+			if !(bus_line_name in ["L19","BRT1"]) { 
+				// create the bus line if it does not exist yet
+				BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
+				
+				if current_bl = nil {
+					create BusLine returns: my_busline { bl_name <- bus_line_name; }
+					current_bl <- my_busline[0];
+				}
+				BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
+				if current_bs != nil {
+					if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
+						if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
+							write "Error in order of bus stops!" color: #red;
+						}
+						current_bl.bl_outgoing_bs <+ current_bs;
+					} else {
+						if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
+							write "Error in order of bus stops!" color: #red;
+						}
+						current_bl.bl_return_bs <+ current_bs;
 					}
-					current_bl.bl_outgoing_bs <+ current_bs;
+					// add the BL once only if the stop is in outgoing and return
+					if !(current_bs.bs_bus_lines contains current_bl) {
+						current_bs.bs_bus_lines <+ current_bl;
+					}
 				} else {
-					if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
-						write "Error in order of bus stops!" color: #red;
-					}
-					current_bl.bl_return_bs <+ current_bs;
-				}
-				// add the BL once only if the stop is in outgoing and return
-				if !(current_bs.bs_bus_lines contains current_bl) {
-					current_bs.bs_bus_lines <+ current_bl;
-				}
-			} else {
-				write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
-				return;
+					write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
+					return;
+				}	
 			}
 		}
 		
@@ -183,51 +186,51 @@ global {
 			int n_vehicles <- BL_DEFAULT_NUMBER_OF_VEHICLES;
 			if dataMatrix index_of bl_name != nil {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
-				bl_interval_time_m <- float(dataMatrix[4, int((dataMatrix index_of bl_name).y)]);
+				bl_interval_time_m <- float(dataMatrix[4, int((dataMatrix index_of bl_name).y)]) #minute;
 				//bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
 				bl_is_brt <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]) = 1;
 			}
 			if !bl_is_brt or use_brt_lines { 
-				int i_counter <- 0;
-				create BusVehicle number: n_vehicles/2 {
-					bv_line <- myself;				
-					bv_current_bs <- bv_line.bl_outgoing_bs[0];
-					bv_current_bs.bs_current_stopping_buses <+ self;
-					bv_next_bs <- bv_current_bs;
-					bv_current_direction <- BL_DIRECTION_OUTGOING;
-					location <- bv_current_bs.location;
-					bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
-					i_counter <- i_counter + 1;
+				loop i from: 0 to: (n_vehicles/2)-1 {
+					create BusVehicle {
+						bv_line <- myself;				
+						bv_current_bs <- bv_line.bl_outgoing_bs[0];
+						bv_current_bs.bs_current_stopping_buses <+ self;
+						bv_next_bs <- bv_current_bs;
+						bv_current_direction <- BL_DIRECTION_OUTGOING;
+						location <- bv_current_bs.location;
+						bv_stop_wait_time <- (bv_line.bl_interval_time_m * i); // next vehicles have a waiting time
+					}
 				}
-				i_counter <- 0;
-				create BusVehicle number: n_vehicles/2 {
-					bv_line <- myself;				
-					bv_current_bs <- bv_line.bl_return_bs[0];
-					bv_current_bs.bs_current_stopping_buses <+ self;
-					bv_next_bs <- bv_current_bs;
-					bv_current_direction <- BL_DIRECTION_RETURN;
-					location <- bv_current_bs.location;
-					bv_stop_wait_time <- (bv_line.bl_interval_time_m * i_counter) #minute; // next vehicles have a waiting time
-					i_counter <- i_counter + 1;
+				loop i from: 0 to: (n_vehicles/2)-1 {
+					create BusVehicle {
+						bv_line <- myself;				
+						bv_current_bs <- bv_line.bl_return_bs[0];
+						bv_current_bs.bs_current_stopping_buses <+ self;
+						bv_next_bs <- bv_current_bs;
+						bv_current_direction <- BL_DIRECTION_RETURN;
+						location <- bv_current_bs.location;
+						bv_stop_wait_time <- (bv_line.bl_interval_time_m * i); // next vehicles have a waiting time
+					}	
 				}
-			}		
+			}
 		}
 		
 		// create the population of moving individuals between PUDZones
 		write "Creating population ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/populations_5000.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/population/populations_5000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
 				ind_origin_zone <- PDUZone first_with (each.pduz_code = int(dataMatrix[1,i]));
 				ind_destin_zone <- PDUZone first_with (each.pduz_code = int(dataMatrix[2,i]));
 				ind_origin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
-				ind_destin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[4,i]));	
+				ind_destin_bs <- BusStop first_with (each.bs_id = int(dataMatrix[4,i]));					
 			}
 		}
 		
 		write "Creating travel plans ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/travel_plans_5000.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/population/travel_plans_5000.csv",true));
 		int id_0 <- -1;
 		int id_x;
 		Individual indiv_x;
@@ -248,7 +251,7 @@ global {
 				indiv_x.ind_available_bt <+ self;	
 			}
 		}
-		//*/
+		//*/		
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
 	}

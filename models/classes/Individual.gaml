@@ -45,7 +45,7 @@ species Individual parallel: true {
 	action make_plans {
 		// 1-line trips
 		loop obs over: ind_origin_bs.bs_neighbors {
-			loop dbs over: ind_destin_bs.bs_neighbors {
+			loop dbs over: ind_destin_bs.bs_neighbors - obs {
 				loop bl over: obs.bs_bus_lines inter dbs.bs_bus_lines {
 					int direc <- bl.can_link_2bs(obs,dbs);
 					// don't build another 1L-trip with the same bus line and same bus stop
@@ -70,36 +70,66 @@ species Individual parallel: true {
 				int index_of_bl1; int index_of_bl2;
 				
 				loop bc over: bl1.bl_connections where (each.bc_bus_lines contains bl2){
+					// just to locate the busline in the connection
 					index_of_bl1 <- bc.bc_bus_lines index_of bl1;
+					index_of_bl2 <- bc.bc_bus_lines index_of bl2;
+					
+					// better approximate o et d
 					if bc.bc_bus_directions [index_of_bl1] = BL_DIRECTION_OUTGOING {
 						obs <- closer(bl1.bl_outgoing_bs, ind_origin_bs);
 					} else {
 						obs <- closer(bl1.bl_return_bs, ind_origin_bs);
 					}
-					int direc1 <- bl1.can_link_2bs(obs, bc.bc_bus_stops[index_of_bl1]);
-					
-					index_of_bl2 <- bc.bc_bus_lines index_of bl2;
 					if bc.bc_bus_directions [index_of_bl2] = BL_DIRECTION_OUTGOING {
 						dbs <- closer(bl2.bl_outgoing_bs, ind_destin_bs);
 					} else {
 						dbs <- closer(bl2.bl_return_bs, ind_destin_bs);
 					}
+					
+					int direc1 <- bl1.can_link_2bs(obs, bc.bc_bus_stops[index_of_bl1]);
 					int direc2 <- bl2.can_link_2bs(bc.bc_bus_stops[index_of_bl2], dbs);
 					
-					if direc1 != -1 and direc2 != -1 {
+					// only connections with the right directions
+					if direc1 != -1 and direc2 != -1 and
+						direc1 = bc.bc_bus_directions [index_of_bl1] and direc2 =  bc.bc_bus_directions [index_of_bl2] {
+						
 						int walk1 <- int(ind_origin_bs distance_to obs);
-						int walk2 <- int(ind_destin_bs distance_to dbs);
-						if walk1 <= BS_NEIGHBORING_DISTANCE and walk2 <= BS_NEIGHBORING_DISTANCE{
-							if !similar_bt_exists(bc.bc_bus_lines[index_of_bl1], bc.bc_bus_directions[index_of_bl1], obs,
-													bc.bc_bus_stops[index_of_bl1]) {
-								do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[index_of_bl1], obs,
-												bc.bc_bus_stops[index_of_bl1], bc.bc_bus_directions[index_of_bl1], walk1);		
+						int walk2 <- int(dbs distance_to ind_destin_bs);
+						int ride1 <- int(obs distance_to bc.bc_bus_stops[index_of_bl1]);
+						int ride2 <- int(bc.bc_bus_stops[index_of_bl2] distance_to dbs);
+						
+						if walk1 <= BS_NEIGHBORING_DISTANCE and walk2 <= BS_NEIGHBORING_DISTANCE
+							and (ride1 > BS_NEIGHBORING_DISTANCE or ride2 > BS_NEIGHBORING_DISTANCE) {
+							
+							// when one of the two rides is less than BS_NEIGHBORING_DISTANCE, take a walk !
+							if ride1 <= BS_NEIGHBORING_DISTANCE {
+								walk1 <- int(ind_origin_bs distance_to bc.bc_bus_stops[index_of_bl2]);
+								do build_trip (BUS_TRIP_SINGLE_LINE, bc.bc_bus_lines[index_of_bl2], bc.bc_bus_stops[index_of_bl2],
+												dbs, bc.bc_bus_directions[index_of_bl2],
+												walk1 + walk2);
+							} else if ride2 <= BS_NEIGHBORING_DISTANCE {
+								walk2 <- int(bc.bc_bus_stops[index_of_bl1] distance_to ind_destin_bs);
+								do build_trip (BUS_TRIP_SINGLE_LINE, bc.bc_bus_lines[index_of_bl1], obs,
+												bc.bc_bus_stops[index_of_bl1], bc.bc_bus_directions[index_of_bl1],
+												walk1 + walk2);
 							}
-							if !similar_bt_exists(bc.bc_bus_lines[index_of_bl2], bc.bc_bus_directions[index_of_bl2],
-													bc.bc_bus_stops[index_of_bl2], dbs) {			
-								do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[index_of_bl2], bc.bc_bus_stops[index_of_bl2],
-												dbs, bc.bc_bus_directions[index_of_bl2], walk2);			
-							}		
+							// both rides are long, make a double-trip journey
+							else { 
+								if !similar_bt_exists(bc.bc_bus_lines[index_of_bl1], bc.bc_bus_directions[index_of_bl1], obs,
+														bc.bc_bus_stops[index_of_bl1]) {
+									do build_trip (BUS_TRIP_1ST_LINE, bc.bc_bus_lines[index_of_bl1], obs,
+													bc.bc_bus_stops[index_of_bl1], bc.bc_bus_directions[index_of_bl1],
+													// we add the 1/2 of connection distance to the first walking distance
+													walk1 + int(bc.bc_connection_distance/2));		
+								}
+								if !similar_bt_exists(bc.bc_bus_lines[index_of_bl2], bc.bc_bus_directions[index_of_bl2],
+														bc.bc_bus_stops[index_of_bl2], dbs) {			
+									do build_trip (BUS_TRIP_2ND_LINE, bc.bc_bus_lines[index_of_bl2], bc.bc_bus_stops[index_of_bl2],
+													dbs, bc.bc_bus_directions[index_of_bl2],
+													// the other half to the second trip walking distance
+													walk2 + int(bc.bc_connection_distance/2));			
+								}	
+							}	
 						}
 					}
 				}

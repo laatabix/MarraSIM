@@ -39,39 +39,42 @@ global {
 			bs_rd_segment <- RoadSegment closest_to self;
 			location <- bs_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			bs_district <- first(District overlapping self);
-			bs_zone <- first(PDUZone overlapping self);
+			bs_zone <- first(PDUZone overlapping self);	
 		}
 		
 		matrix dataMatrix <- matrix(csv_file("../../includes/csv/bus_lines/bus_lines_stops.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
-			// create the bus line if it does not exist yet
-			BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
 			
-			if current_bl = nil {
-				create BusLine returns: my_busline { bl_name <- bus_line_name; }
-				current_bl <- my_busline[0];
-			}
-			BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
-			if current_bs != nil {
-				if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
-					if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
-						write "Error in order of bus stops!" color: #red;
+			if !(bus_line_name in ["L19","BRT1"]) { 
+			// create the bus line if it does not exist yet
+				BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
+				
+				if current_bl = nil {
+					create BusLine returns: my_busline { bl_name <- bus_line_name; }
+					current_bl <- my_busline[0];
+				}
+				BusStop current_bs <- BusStop first_with (each.bs_id = int(dataMatrix[3,i]));
+				if current_bs != nil {
+					if int(dataMatrix[1,i]) = BL_DIRECTION_OUTGOING {
+						if length(current_bl.bl_outgoing_bs) != int(dataMatrix[2,i]) {
+							write "Error in order of bus stops!" color: #red;
+						}
+						current_bl.bl_outgoing_bs <+ current_bs;
+					} else {
+						if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
+							write "Error in order of bus stops!" color: #red;
+						}
+						current_bl.bl_return_bs <+ current_bs;
 					}
-					current_bl.bl_outgoing_bs <+ current_bs;
+					// add the BL once only if the stop is in outgoing and return
+					if !(current_bs.bs_bus_lines contains current_bl) {
+						current_bs.bs_bus_lines <+ current_bl;
+					}
 				} else {
-					if length(current_bl.bl_return_bs) != int(dataMatrix[2,i]) {
-						write "Error in order of bus stops!" color: #red;
-					}
-					current_bl.bl_return_bs <+ current_bs;
-				}
-				// add the BL once only if the stop is in outgoing and return
-				if !(current_bs.bs_bus_lines contains current_bl) {
-					current_bs.bs_bus_lines <+ current_bl;
-				}
-			} else {
-				write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
-				return;
+					write "Error, the bus stop does not exist : " + dataMatrix[3,i] + " (" + dataMatrix[1,i] +")" color: #red;
+					return;
+				}	
 			}
 		}
 		

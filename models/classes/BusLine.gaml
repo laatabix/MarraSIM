@@ -14,7 +14,7 @@ global {
 	// the default number of vehicles in each line
 	int BL_DEFAULT_NUMBER_OF_VEHICLES <- 4;
 	//the default interva time between vehicles
-	float BL_DEFAULT_INTERVAL_TIME <- 20#minute;
+	float BL_DEFAULT_INTERVAL_TIME <- 30#minute;
 	
 	int BL_DIRECTION_OUTGOING <- 1;
 	int BL_DIRECTION_RETURN <- 2;
