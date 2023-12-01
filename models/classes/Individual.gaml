@@ -103,15 +103,21 @@ species Individual parallel: true {
 							
 							// when one of the two rides is less than BS_NEIGHBORING_DISTANCE, take a walk !
 							if ride1 <= BS_NEIGHBORING_DISTANCE {
-								walk1 <- int(ind_origin_bs distance_to bc.bc_bus_stops[index_of_bl2]);
-								do build_trip (BUS_TRIP_SINGLE_LINE, bc.bc_bus_lines[index_of_bl2], bc.bc_bus_stops[index_of_bl2],
+								if !similar_bt_exists(bc.bc_bus_lines[index_of_bl2], bc.bc_bus_directions[index_of_bl2],
+														bc.bc_bus_stops[index_of_bl2], dbs) {	
+									walk1 <- int(ind_origin_bs distance_to bc.bc_bus_stops[index_of_bl2]);
+									do build_trip (BUS_TRIP_SINGLE_LINE, bc.bc_bus_lines[index_of_bl2], bc.bc_bus_stops[index_of_bl2],
 												dbs, bc.bc_bus_directions[index_of_bl2],
-												walk1 + walk2);
+												walk1 + walk2);				
+								}
 							} else if ride2 <= BS_NEIGHBORING_DISTANCE {
-								walk2 <- int(bc.bc_bus_stops[index_of_bl1] distance_to ind_destin_bs);
-								do build_trip (BUS_TRIP_SINGLE_LINE, bc.bc_bus_lines[index_of_bl1], obs,
+								if !similar_bt_exists(bc.bc_bus_lines[index_of_bl1], bc.bc_bus_directions[index_of_bl1], obs,
+														bc.bc_bus_stops[index_of_bl1]) {
+									walk2 <- int(bc.bc_bus_stops[index_of_bl1] distance_to ind_destin_bs);
+									do build_trip (BUS_TRIP_SINGLE_LINE, bc.bc_bus_lines[index_of_bl1], obs,
 												bc.bc_bus_stops[index_of_bl1], bc.bc_bus_directions[index_of_bl1],
-												walk1 + walk2);
+												walk1 + walk2);				
+								}
 							}
 							// both rides are long, make a double-trip journey
 							else { 

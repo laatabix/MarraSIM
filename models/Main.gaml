@@ -112,7 +112,7 @@ global {
 		loop i from: 0 to: dataMatrix.rows -1 {
 			string bus_line_name <- dataMatrix[0,i];
 			
-			if !(bus_line_name in ["L19","BRT1"]) { 
+			if !(bus_line_name in ["L40","L41","L332","L19","BRT1"]) { 
 				// create the bus line if it does not exist yet
 				BusLine current_bl <- first(BusLine where (each.bl_name = bus_line_name));
 				
