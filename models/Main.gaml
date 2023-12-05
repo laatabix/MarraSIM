@@ -218,7 +218,7 @@ global {
 		
 		// create the population of moving individuals between PUDZones
 		write "Creating population ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/population/populations_5000.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/population/populations.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
@@ -230,7 +230,7 @@ global {
 		}
 		
 		write "Creating travel plans ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/population/travel_plans_5000.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/population/travel_plans.csv",true));
 		int id_0 <- -1;
 		int id_x;
 		Individual indiv_x;

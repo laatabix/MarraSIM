@@ -223,33 +223,59 @@ species BusVehicle skills: [moving] {
 						// if passengers have information about time tables of bus lines, remove individuals that can do
 						// a better trip on another line 					
 						if time_tables_on {
+							//write "-----------VVV " + self + "BL " + bv_line.bl_name + " BS " + bv_current_bs + " : " + bv_current_bs.bs_name;
 							list<Individual> inds_to_remove <- [];
 							loop indiv over: waiting_inds {
 								// can this bus takes indiv to his destination
-								// consider (for now to simplify) only trips that arrive to final destination = SINGLE and 2ND trips 
+								// at first consider only trips that arrive to final destination = SINGLE and 2ND trips 
 								list<BusTrip> btps <- indiv.ind_available_bt where (each.bt_bus_line = self.bv_line
 											and each.bt_bus_direction = self.bv_current_direction
-											//and each.bt_start_bs in self.bv_current_bs.bs_neighbors
 										and ((indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_SINGLE_LINE)
 												or (indiv.ind_current_plan_index = 1 and each.bt_type = BUS_TRIP_2ND_LINE
 													and each.bt_start_bs in self.bv_current_bs.bs_neighbors)));
+								// then if not found, consider 1ST trips
+								if empty (btps) and indiv.ind_current_plan_index = 0 { // if no 1L or 2L-2nd are found, then maybe 2L-1st
+									btps <- indiv.ind_available_bt where (each.bt_bus_line = self.bv_line
+											and each.bt_bus_direction = self.bv_current_direction
+										and (indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_1ST_LINE
+													and each.bt_start_bs in self.bv_current_bs.bs_neighbors) );
+								}
 								
 								if !empty(btps) {
 									// time to arrive to destination using this bus
-									BusTrip bestbt <- btps where (each.bt_end_bs in bv_time_table.keys) with_min_of (bv_time_table at each.bt_end_bs);
+									BusTrip bestbt <- btps where (each.bt_type != BUS_TRIP_1ST_LINE and
+												each.bt_end_bs in bv_time_table.keys) with_min_of (bv_time_table at each.bt_end_bs);
+									int mydist <- 0;
+									if bestbt = nil {
+										// time to arrive to the best correspondance
+										list res_l <- best_correspondance(btps where (each.bt_type = BUS_TRIP_1ST_LINE and
+																	each.bt_end_bs in bv_time_table.keys),
+															indiv.ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE));
+										bestbt <- BusTrip(res_l[0]);
+										mydist <- int(res_l[1]);
+									}
+									//write "indiv " + indiv + " This veh bestbt " + bestbt;
 									float time_to_dest_this <- bv_time_table at bestbt.bt_end_bs;
+									//write "time_to_dest_this " + time_to_dest_this;
+									
 									// theoretical arrival time not reached yet
-
 									if time_to_dest_this > bv_time_table at self.bv_current_bs {
 										
 										float min_time_to_dest_others <- #max_float;
 										// trips using other lines
-										loop bt over: indiv.ind_available_bt where (each.bt_bus_line != self.bv_line
-												//and each.bt_start_bs in self.bv_current_bs.bs_neighbors
-												and
-												((indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_SINGLE_LINE) or
-												(indiv.ind_current_plan_index = 1 and each.bt_type = BUS_TRIP_2ND_LINE
-													and each.bt_start_bs in self.bv_current_bs.bs_neighbors))) {
+										
+										list<BusTrip> other_btps <- indiv.ind_available_bt where (each.bt_bus_line != self.bv_line
+													and ((indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_SINGLE_LINE)
+													or (indiv.ind_current_plan_index = 1 and each.bt_type = BUS_TRIP_2ND_LINE
+													and each.bt_start_bs in self.bv_current_bs.bs_neighbors)));
+										// check fro 2L-1st
+										if empty (other_btps) {
+											other_btps <- indiv.ind_available_bt where (each.bt_bus_line != self.bv_line
+													and indiv.ind_current_plan_index = 0 and each.bt_type = BUS_TRIP_1ST_LINE
+													and each.bt_start_bs in self.bv_current_bs.bs_neighbors);
+										}
+										
+										loop bt over: other_btps {
 											// other busses that can serve this trip
 											list<BusVehicle> bvs <- BusVehicle where (each.bv_line = bt.bt_bus_line and
 												each.bv_current_direction = bt.bt_bus_direction and !empty(each.bv_time_table)
@@ -268,13 +294,28 @@ species BusVehicle skills: [moving] {
 													float tt <- bv.bv_time_table at bt.bt_end_bs;
 													// min(bvs where (bt.bt_end_bs in each.bv_time_table.keys) accumulate (each.bv_time_table at bt.bt_end_bs));
 													
-													if tt > bv.bv_time_table at self.bv_current_bs and tt < min_time_to_dest_others {
-														min_time_to_dest_others <- tt;
+													if (tt > bv.bv_time_table at self.bv_current_bs) and tt < min_time_to_dest_others {
+														if bt.bt_type = BUS_TRIP_1ST_LINE {
+															list<BusTrip> mytrps <- indiv.ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE
+																					and bt.bt_end_bs in each.bt_start_bs.bs_neighbors);
+															if !empty(mytrps) {
+																int ddist <- int(((mytrps mean_of (each.bt_bus_distance + each.bt_walk_distance))/length(mytrps))
+																			+ bt.bt_bus_distance + bt.bt_walk_distance);
+																if ddist < mydist {
+																	min_time_to_dest_others <- tt;
+																	//write "btttt 11111111st " + bt + " :: " + tt + " BV " + bv + ": " +bv.bv_line.bl_name;
+																}	
+															}
+														} else {
+															min_time_to_dest_others <- tt;
+															//write "btttSSSSSINGLE or 222222222ndddd " + bt + " :: " + tt+ " BV " + bv + ": " +bv.bv_line.bl_name;
+														}
 													}
 												}	
 											}
 										}
 										if min_time_to_dest_others < time_to_dest_this {
+											//write "remove iind " + indiv + " :: " + min_time_to_dest_others;
 											inds_to_remove <+ indiv;
 										}	
 									}
@@ -301,30 +342,15 @@ species BusVehicle skills: [moving] {
 									if best1L != nil {
 										ind_current_bt <- best1L;
 									} else {
-										// choose 1st trip as the one with destination is where 2nd trips have the minimum trip time
-										int max_corresps <- -1;
-										int n_corresps <- -1;
-										list<BusTrip> my_1strips <- my_bus_trips where (each.bt_type = BUS_TRIP_1ST_LINE and
-																each.bt_start_bs in myself.bv_current_bs.bs_neighbors);
-										list<BusTrip> my_2ndtrips <- ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE);
-										loop trip1 over: my_1strips {
-											n_corresps <- length(my_2ndtrips where (trip1.bt_end_bs in each.bt_start_bs.bs_neighbors));
-											if n_corresps > max_corresps {
-												max_corresps <- n_corresps;
-												ind_current_bt <- trip1;
-											} else if n_corresps = max_corresps {
-												if trip1.bt_bus_distance + trip1.bt_walk_distance < 
-														ind_current_bt.bt_bus_distance + ind_current_bt.bt_walk_distance {
-													ind_current_bt <- trip1;
-												}
-											}
-										}
+										// choose 1st trip as the one with destination is where 2nd trips have the minimum trip time									
+										ind_current_bt <- BusTrip(first(myself.best_correspondance(
+														my_bus_trips where (each.bt_type = BUS_TRIP_1ST_LINE),
+														ind_available_bt where (each.bt_type = BUS_TRIP_2ND_LINE))));
 									}				
 																				
 								} else {
 									// the individual is making a second ride
-									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_2ND_LINE and
-													each.bt_start_bs in myself.bv_current_bs.bs_neighbors)
+									ind_current_bt <- my_bus_trips where (each.bt_type = BUS_TRIP_2ND_LINE)
 													with_min_of (each.bt_bus_distance + each.bt_walk_distance);
 								}
 								// a trip has been picked
@@ -432,6 +458,25 @@ species BusVehicle skills: [moving] {
 	aspect default {
 		draw bv_icon size: {50#meter,25#meter} rotate: heading;
 		//draw "" + bv_line.bl_name anchor: #center font: font("Calibri", 10, #bold) color: #black;
+	}
+	
+	list best_correspondance (list<BusTrip> firsts, list<BusTrip> seconds){
+		int min_dist <- #max_int;
+		int ddst <- #max_int;
+		BusTrip best_bt <- nil;
+
+		loop trip1 over: firsts {
+			list<BusTrip> mysecs <- seconds where (trip1.bt_end_bs in each.bt_start_bs.bs_neighbors);
+			if !empty(mysecs) {
+				ddst <- int(((mysecs mean_of (each.bt_bus_distance + each.bt_walk_distance))/length(mysecs))
+							+ trip1.bt_bus_distance + trip1.bt_walk_distance);
+				if ddst < min_dist {
+					min_dist <- ddst;
+					best_bt <- trip1;
+				}	
+			}
+		}
+		return [best_bt,min_dist];
 	}
 }
 
