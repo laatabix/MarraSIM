@@ -32,8 +32,8 @@ species Individual parallel: true {
 	BusStop ind_destin_bs;
 	bool ind_moving <- false;
 	bool ind_arrived <- false;
-	list<int> ind_waiting_times <- [0,0];
-	list<int> ind_trip_times <- [0,0];
+	list<list<int>> ind_times <- []; // one or two lists one for each trip (one or two trips)
+										// for each list 3 values : start waiting time; borading bus time; arrival time
 	
 	BusStop ind_waiting_bs <- nil; // bus stop where the individual is waiting
 	list<BusTrip> ind_available_bt <- []; // list of available (possible) bus trips to take between origin and distination

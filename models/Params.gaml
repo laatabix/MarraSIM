@@ -22,7 +22,7 @@ global {
 
 	/********* Road Traffic *********/
 	// use or not congestion from Google Traffic
-	bool traffic_on <- true;
+	bool traffic_on <- false;
 	/******************************/
 	
 	
@@ -31,7 +31,7 @@ global {
 	bool transfer_on <- false; 
 	
 	// individuals have information about bus timetables
-	bool time_tables_on <- true; 
+	bool time_tables_on <- false; 
 
 	// whether BRT lines are activated or not
 	bool use_brt_lines <- false;

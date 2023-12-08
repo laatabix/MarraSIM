@@ -44,11 +44,15 @@ global {
 	int finished_1L_journeys <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1));
 	int finished_2L_journeys <- 0 update: length(Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2));
 	
-	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (sum(each.ind_trip_times));
-	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (sum(each.ind_trip_times));
+	float mean_travel_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1)
+						mean_of (each.ind_times[0][2] - each.ind_times[0][1]);
+	float mean_travel_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2)
+						mean_of ( (each.ind_times[0][2] - each.ind_times[0][1]) + (each.ind_times[1][2] - each.ind_times[1][1]) );
 	
-	float mean_waiting_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1) mean_of (sum(each.ind_waiting_times));
-	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2) mean_of (sum(each.ind_waiting_times));
+	float mean_waiting_time_1L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 1)
+						mean_of (each.ind_times[0][1] - each.ind_times[0][0]);
+	float mean_waiting_time_2L <- 0.0 update: Individual where (each.ind_arrived and length(each.ind_actual_journey) = 2)
+						mean_of ( (each.ind_times[0][1] - each.ind_times[0][0]) + (each.ind_times[1][1] - each.ind_times[1][0]) );
 	
 	/*******************************************************************************************************************************/
 	
@@ -73,9 +77,9 @@ global {
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/times.csv";
 			save "cycle,bl,outs,rets,outs_board,rets_board,traff,sign,psg"
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/buslines.csv";
-			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk,wtt,tpt"
+			save "cycle,ind,origin,destin,bttype,bl,dir,dist,walk,wait,board,arrival"
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/bustrips.csv";
-			save "cycle,bv,bl,bs,zone"
+			save "cycle,bv,bl,capa,bs,zone"
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/full_bus_vehicles.csv";
 		}
 		
@@ -184,11 +188,13 @@ global {
 		dataMatrix <- matrix(csv_file("../includes/csv/bus_lines/bus_lines_data.csv",true));
 		ask BusLine {
 			int n_vehicles <- BL_DEFAULT_NUMBER_OF_VEHICLES;
+			int n_large_vehicles <- 0;
 			if dataMatrix index_of bl_name != nil {
 				n_vehicles <- int(dataMatrix[1, int((dataMatrix index_of bl_name).y)]);
 				bl_interval_time_m <- float(dataMatrix[4, int((dataMatrix index_of bl_name).y)]) #minute;
 				//bl_com_speed <- float(dataMatrix[7, int((dataMatrix index_of bl_name).y)]) #km/#h;
-				bl_is_brt <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]) = 1;
+				n_large_vehicles <- int(dataMatrix[8, int((dataMatrix index_of bl_name).y)]);
+				bl_is_brt <- int(dataMatrix[9, int((dataMatrix index_of bl_name).y)]) = 1;
 			}
 			if !bl_is_brt or use_brt_lines { 
 				loop i from: 0 to: (n_vehicles/2)-1 {
@@ -214,11 +220,14 @@ global {
 					}	
 				}
 			}
+			ask n_large_vehicles among BusVehicle where (each.bv_line = self) {
+				bv_capacity <- BV_CAPACITY_LARGE;
+			}
 		}
 		
 		// create the population of moving individuals between PUDZones
 		write "Creating population ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/population/populations.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/population/populations_5000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
 				ind_id <- int(dataMatrix[0,i]);
@@ -230,7 +239,7 @@ global {
 		}
 		
 		write "Creating travel plans ...";
-		dataMatrix <- matrix(csv_file("../includes/csv/population/travel_plans.csv",true));
+		dataMatrix <- matrix(csv_file("../includes/csv/population/travel_plans_5000.csv",true));
 		int id_0 <- -1;
 		int id_x;
 		Individual indiv_x;
@@ -304,7 +313,7 @@ global {
 				ind_moving <- true;
 				ind_waiting_bs <- ind_origin_bs;
 				ind_waiting_bs.bs_waiting_people <+ self;
-				ind_waiting_times[0] <- int(time);
+				ind_times <+ [int(time)]; // waiting time, first trip
 			}	
 		}
 		write formatted_time()  + "Total people waiting at bus stops : " + BusStop sum_of length(each.bs_waiting_people) color: #purple;
@@ -345,18 +354,14 @@ global {
 			
 			ask unsaved_arrivals {
 				loop i from: 0 to: length(ind_actual_journey) - 1 {
-					PDUZone startzone <- ind_actual_journey[i].bt_start_bs.bs_zone;
-					if startzone = nil {
-						startzone <- PDUZone closest_to ind_actual_journey[i].bt_start_bs;
-					}
-					PDUZone endzone <- ind_actual_journey[i].bt_end_bs.bs_zone;
-					if endzone = nil {
-						endzone <- PDUZone closest_to ind_actual_journey[i].bt_end_bs;
-					}
-					save '' + cycle + ',' + ind_id + ',' + startzone.pduz_code + ',' + endzone.pduz_code + ',' + 
+					int startzone <- ind_actual_journey[i].bt_start_bs.bs_zone.pduz_code;
+					int endzone <- ind_actual_journey[i].bt_end_bs.bs_zone.pduz_code;
+
+					save '' + cycle + ',' + ind_id + ',' + startzone + ',' + endzone + ',' + 
 							ind_actual_journey[i].bt_type + ',' + ind_actual_journey[i].bt_bus_line.bl_name + ',' +
 							ind_actual_journey[i].bt_bus_direction + ',' + ind_actual_journey[i].bt_bus_distance + ',' +
-							ind_actual_journey[i].bt_walk_distance + ',' + ind_waiting_times [i] + ',' + ind_trip_times[i]
+							ind_actual_journey[i].bt_walk_distance + ',' + 
+							ind_times[i][0] + ',' + ind_times[i][1] + ',' + ind_times[i][2]
 						format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/bustrips.csv";		
 				}
 			}
