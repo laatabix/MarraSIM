@@ -369,16 +369,18 @@ global {
 			}
 			
 			ask unsaved_arrivals {
-				loop i from: 0 to: length(ind_actual_journey) - 1 {
-					int startzone <- ind_actual_journey[i].bt_start_bs.bs_zone.pduz_code;
-					int endzone <- ind_actual_journey[i].bt_end_bs.bs_zone.pduz_code;
-
-					save '' + cycle + ',' + ind_id + ',' + startzone + ',' + endzone + ',' + 
-							ind_actual_journey[i].bt_type + ',' + ind_actual_journey[i].bt_bus_line.bl_name + ',' +
-							ind_actual_journey[i].bt_bus_direction + ',' + ind_actual_journey[i].bt_bus_distance + ',' +
-							ind_actual_journey[i].bt_walk_distance + ',' + 
-							ind_times[i][0] + ',' + ind_times[i][1] + ',' + ind_times[i][2]
-						format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/bustrips.csv";		
+				if !empty(ind_actual_journey) {
+					loop i from: 0 to: length(ind_actual_journey) - 1 {
+						int startzone <- ind_actual_journey[i].bt_start_bs.bs_zone.pduz_code;
+						int endzone <- ind_actual_journey[i].bt_end_bs.bs_zone.pduz_code;
+	
+						save '' + cycle + ',' + ind_id + ',' + startzone + ',' + endzone + ',' + 
+								ind_actual_journey[i].bt_type + ',' + ind_actual_journey[i].bt_bus_line.bl_name + ',' +
+								ind_actual_journey[i].bt_bus_direction + ',' + ind_actual_journey[i].bt_bus_distance + ',' +
+								ind_actual_journey[i].bt_walk_distance + ',' + 
+								ind_times[i][0] + ',' + ind_times[i][1] + ',' + ind_times[i][2]
+							format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/bustrips.csv";		
+					}	
 				}
 				if ind_left {
 					save '' + cycle + ',' + ind_id + ',' + ind_waiting_bs.bs_zone.pduz_code + ',' + -1 + ',' + 
