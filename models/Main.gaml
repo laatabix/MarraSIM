@@ -69,6 +69,11 @@ global {
 			}
 		} else {
 			sim_id <- machine_time;
+			save 'traffic_on = ' + traffic_on + '\n' +
+					'transfer_on = ' + transfer_on + '\n' + 
+					'time_tables_on = ' + time_tables_on
+				format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/params.txt";
+			
 			save "cycle,pduzone,w_people,w_time,bus_del,traf_del,pass_del,sign_del" 
 					format: 'text' rewrite: true to: "../outputs/data_"+sim_id+"/pduzones.csv";
 			save "cycle,waiting1st,waiting2nd,onboard,arrived" 
@@ -304,12 +309,23 @@ global {
 			}
 		}
 		
-		// each X minutes
+		// remove people that waited enough
+		ask BusStop accumulate each.bs_waiting_people where ( 
+				(each.ind_current_plan_index = 0 and int(time - each.ind_times[0][0]) >= IND_MAX_WAITING_TIME) or
+				(each.ind_current_plan_index = 1 and int(time - each.ind_times[1][0]) >= IND_MAX_WAITING_TIME)) {
+			
+			ind_times[ind_current_plan_index] <+ int(time); // time when left
+			ind_left <- true;
+			ind_moving <- false;
+			ind_waiting_bs.bs_waiting_people >- self;
+			unsaved_arrivals <+ self;	
+		}
+		
 		// ask a random number of people (N%) to travel 
 		int nn <- int(current_affluence / (60/Nminutes) * length(Individual));
 		if nn > 0 {
 			write formatted_time() + nn + " new people are travelling ...";
-			ask nn among (Individual where !(each.ind_moving or each.ind_arrived)) {
+			ask nn among (Individual where !(each.ind_moving or each.ind_arrived or each.ind_left)) {
 				ind_moving <- true;
 				ind_waiting_bs <- ind_origin_bs;
 				ind_waiting_bs.bs_waiting_people <+ self;
@@ -363,6 +379,13 @@ global {
 							ind_actual_journey[i].bt_walk_distance + ',' + 
 							ind_times[i][0] + ',' + ind_times[i][1] + ',' + ind_times[i][2]
 						format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/bustrips.csv";		
+				}
+				if ind_left {
+					save '' + cycle + ',' + ind_id + ',' + ind_waiting_bs.bs_zone.pduz_code + ',' + -1 + ',' + 
+							-1 + ',' + -1 + ',' + -1 + ',' + -1 + ',' + -1 + ',' + 
+							ind_times[ind_current_plan_index][0] + ',' + ind_times[ind_current_plan_index][1] + ',' + -1
+						format: "text" rewrite: false to: "../outputs/data_"+sim_id+"/bustrips.csv";
+					ind_waiting_bs <- nil;
 				}
 			}
 			unsaved_arrivals <- [];

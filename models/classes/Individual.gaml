@@ -15,6 +15,8 @@ global {
 	
 	// time to wait for 1L-trips before taking a 2L-trip when transfer is off
 	int IND_WAITING_TIME_FOR_1L_TRIPS <- int(30#minute);
+	
+	int IND_MAX_WAITING_TIME <- int (90#minute);
 		
 	// a list of arrivals for data saving
 	list<Individual> unsaved_arrivals <- [];
@@ -32,6 +34,7 @@ species Individual parallel: true {
 	BusStop ind_destin_bs;
 	bool ind_moving <- false;
 	bool ind_arrived <- false;
+	bool ind_left <- false;
 	list<list<int>> ind_times <- []; // one or two lists one for each trip (one or two trips)
 										// for each list 3 values : start waiting time; borading bus time; arrival time
 	
