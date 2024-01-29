@@ -1,0 +1,39 @@
+id,nom,Direction,station_index
+1,Iziki - Mhamid,1,1
+1,Iziki - Mhamid,2,2
+2,Medina- Iziki,1,1
+2,Medina- Iziki,2,2
+3,Mhamid - Mssalla,1,1
+3,Mhamid - Mssalla,2,2
+4,Mhamid - Medina,1,1
+4,Mhamid - Medina,2,2
+5,Bab Doukkala - Iziki,1,1
+5,Bab Doukkala - Iziki,2,2
+6,Bab doukala - Medina,1,1
+6,Bab doukala - Medina,2,2
+7,Mhamid - Mhamid 9,1,1
+7,Mhamid - Mhamid 9,2,2
+8,Bab Doukkala - Saada,1,1
+8,Bab Doukkala - Saada,2,2
+9,Bab Doukkala - Bab Aghmat,1,1
+9,Bab Doukkala - Bab Aghmat,2,2
+10,Bab Aghmat - Mssalla,1,1
+10,Bab Aghmat - Mssalla,2,2
+11,Bab Doukkala - CHU,1,1
+11,Bab Doukkala - CHU,2,2
+12,Bab Doukkala - Medina,1,1
+12,Bab Doukkala - Medina,2,2
+13,Bab Doukkala - Medina 2,1,1
+13,Bab Doukkala - Medina 2,2,2
+14,Al Mssalla- Medina,1,1
+14,Al Mssalla- Medina,2,2
+15,Bab doukkala- Mssela,1,1
+15,Bab doukkala- Mssela,2,2
+16,Bab Doukalla - Daoudiyat,1,1
+16,Bab Doukalla - Daoudiyat,2,2
+17,Mssela -  Bab Doukalla,1,1
+17,Mssela -  Bab Doukalla,2,2
+18,Mssela - Daoudiayt,1,1
+18,Mssela - Daoudiayt,2,2
+19,Medina - Saada,1,1
+19,Medina - Saada,2,2
