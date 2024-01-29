@@ -12,7 +12,7 @@ import "Individual.gaml"
 import "TrafficSignal.gaml"
 import "BusTrip.gaml"
 import "TaxiLine.gaml"
-import "TaxiRoadSegment.gaml"
+import "TaxiRoad.gaml"
 import "TaxiStations.gaml"
 
 
@@ -53,7 +53,7 @@ species TaxiVehicle skills: [moving] {
 	//image_file tv_icon <- image_file("../../includes/img/Gtaxi.jpeg");
 	
 	TrafficSignal Tv_current_traff_sign <- nil; // when the vehicle stops at a traffic signal
-	TaxiRoadSegment tv_current_rd_segment <- nil;
+	TaxiRoad tv_current_rd_segment <- nil;
 	TaxiStations tv_station<- nil;
 	list<Individual> Tv_passengers <- [];
 	
@@ -77,7 +77,7 @@ species TaxiVehicle skills: [moving] {
 //			tv_in_move <- true;
 //		}
 //		// the current road segment of the bus
-		tv_current_rd_segment <- TaxiRoadSegment(current_edge);
+		tv_current_rd_segment <- TaxiRoad(current_edge);
 		
 		
 		
@@ -97,7 +97,7 @@ species TaxiVehicle skills: [moving] {
 			}	
 		}
 		// move
-		do goto on: taxi_road_network target: any_location_in (one_of (TaxiRoadSegment)) speed: tv_actual_speed;
+		do goto on: taxi_road_network target: any_location_in (one_of (TaxiRoad)) speed: tv_actual_speed;
 	
 	}
 	

@@ -33,7 +33,7 @@ global {
 /***** TaxiRoadSegment Species ****/
 /*****************************/
 
-species TaxiRoadSegment schedules: [] parallel: true {
+species TaxiRoad schedules: [] parallel: true {
 	int trs_id;
 	float station_x;
 	rgb trs_col <- #yellow;

@@ -13,7 +13,7 @@ model MarraSIM
 import "classes/PDUZone.gaml"
 import "classes/Building.gaml"
 import "classes/TaxiVehicle.gaml"
-import "classes/TaxiRoadSegment.gaml"
+import "classes/TaxiRoad.gaml"
 import "classes/TaxiStations.gaml"
 
 
@@ -111,7 +111,7 @@ global {
 		road_network <- as_edge_graph(list(RoadSegment));
 		//-----------
 		write "Creating Grand Taxi Roads";
-		create TaxiRoadSegment from: marrakesh_GrandTaxis_roads with: [trs_id::int(get("id"))]{
+		create TaxiRoad from: marrakesh_GrandTaxis_roads with: [trs_id::int(get("id"))]{
 		trs_zone <- first(PDUZone overlapping self);
 			trs_in_city <- trs_in_city != nil;
 		
@@ -125,7 +125,7 @@ global {
 //				
 //			}
 		}
-		taxi_road_network <- as_edge_graph(list(TaxiRoadSegment));
+		taxi_road_network <- as_edge_graph(list(TaxiRoad));
 //		{
 //			location <- any_location_in (one_of (Taxi_road));
 //		}
@@ -161,7 +161,7 @@ global {
 			//write "location"+location;
 //			ts_district <- first(District overlapping self);
 //			ts_zone <- first(PDUZone overlapping self);
-		    taxi_rd_segment <- RoadSegment closest_to self;
+		    taxi_rd_segment <- TaxiRoad closest_to self;
 			write "taxi_rd_segment"+taxi_rd_segment;
 			location <- taxi_rd_segment.shape.points closest_to self; // to draw the bus stop on a road (accessible to bus)
 			ts_district <- first(District overlapping self);
@@ -426,7 +426,7 @@ global {
 		}
 		
 		// create the population of moving individuals between PUDZones
-		write "Creating population ...";
+		/*write "Creating population ...";
 		dataMatrix <- matrix(csv_file("../includes/csv/population/populations_5000.csv",true));
 		loop i from: 0 to: dataMatrix.rows -1 {
 			create Individual {
@@ -460,7 +460,7 @@ global {
 				indiv_x.ind_available_bt <+ self;	
 			}
 		}
-		//*/		
+		*/		
 		write "Total population: " + length(Individual);
 		write "--+-- END OF INIT --+--" color:#green;
 	}
@@ -634,7 +634,7 @@ experiment MarraSIM type: gui {
 			species TrafficSignal refresh: false;
 			species BusVehicle;
 			species TaxiVehicle;
-			species TaxiRoadSegment  ;
+			species TaxiRoad;
 			species TaxiStations  ;
 		}
 		//----------------------------------------------------------------------------------------------------------------//

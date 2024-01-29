@@ -24,7 +24,7 @@ species TaxiStations schedules: [] parallel: true{
 	int taxi_station_direction;
 	string taxi_station_name;
 	bool ts_depart_or_terminus <- false;
-	TaxiRoadSegment taxi_rd_segment;
+	TaxiRoad taxi_rd_segment;
 
 	District ts_district;
 	PDUZone ts_zone;
